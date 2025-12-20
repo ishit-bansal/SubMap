@@ -21,21 +21,21 @@ function save() {
 function loadIncome() {
   try {
     const raw = localStorage.getItem(INCOME_KEY);
-    if (!raw) return { hourly: 0, daily: 0, weekly: 0, monthly: 0 };
+    if (!raw) return { hourly: 0, daily: 0, weekly: 0, monthly: 0, lastType: null };
     const parsed = JSON.parse(raw);
     return {
       hourly: Number(parsed.hourly) || 0,
       daily: Number(parsed.daily) || 0,
       weekly: Number(parsed.weekly) || 0,
-      monthly: Number(parsed.monthly) || 0
+      monthly: Number(parsed.monthly) || 0,
+      lastType: parsed.lastType || null
     };
   } catch (err) {
     console.warn("failed to load income data:", err);
-    return { hourly: 0, daily: 0, weekly: 0, monthly: 0 };
+    return { hourly: 0, daily: 0, weekly: 0, monthly: 0, lastType: null };
   }
 }
 
 function saveIncome(incomeState) {
   localStorage.setItem(INCOME_KEY, JSON.stringify(incomeState));
-  renderTotals();
 }
