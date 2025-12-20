@@ -1,12 +1,17 @@
-const STORAGE_KEY = "subviz_subscriptions";
-const INCOME_KEY = "subviz_income";
+/**
+ * Storage module for SubGrid
+ * Handles localStorage persistence for subscriptions and income settings
+ */
+
+const STORAGE_KEY = 'subgrid_subs';
+const INCOME_KEY = 'subgrid_income';
 
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) subs = JSON.parse(raw);
   } catch (err) {
-    console.warn("failed to load saved data:", err);
+    console.warn('Failed to load subscriptions:', err);
     subs = [];
   }
 }
@@ -21,21 +26,18 @@ function save() {
 function loadIncome() {
   try {
     const raw = localStorage.getItem(INCOME_KEY);
-    if (!raw) return { hourly: 0, daily: 0, weekly: 0, monthly: 0, lastType: null };
+    if (!raw) return { amount: 0, unit: 'hourly' };
     const parsed = JSON.parse(raw);
     return {
-      hourly: Number(parsed.hourly) || 0,
-      daily: Number(parsed.daily) || 0,
-      weekly: Number(parsed.weekly) || 0,
-      monthly: Number(parsed.monthly) || 0,
-      lastType: parsed.lastType || null
+      amount: Number(parsed.amount) || 0,
+      unit: parsed.unit || 'hourly'
     };
   } catch (err) {
-    console.warn("failed to load income data:", err);
-    return { hourly: 0, daily: 0, weekly: 0, monthly: 0, lastType: null };
+    console.warn('Failed to load income:', err);
+    return { amount: 0, unit: 'hourly' };
   }
 }
 
-function saveIncome(incomeState) {
-  localStorage.setItem(INCOME_KEY, JSON.stringify(incomeState));
+function saveIncome(state) {
+  localStorage.setItem(INCOME_KEY, JSON.stringify(state));
 }

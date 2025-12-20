@@ -1,47 +1,65 @@
-/* custom scrollbar - webkit only */
-::-webkit-scrollbar { width: 6px }
-::-webkit-scrollbar-track { background: transparent }
-::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 20px;
+/* Retro CRT scan lines */
+.scan-lines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
 }
 
-/* hide number input spinners */
+/* Retro grid background */
+.retro-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: 
+    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #12121a; }
+::-webkit-scrollbar-thumb { background-color: #2a2a3e; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background-color: #3a3a4e; }
+
+/* Hide number spinners */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-input[type="number"] {
-  -moz-appearance: textfield;
-}
+input[type="number"] { -moz-appearance: textfield; }
 
-.iconify {
-  display: inline-block;
-  vertical-align: middle;
-}
+.iconify { display: inline-block; vertical-align: middle; }
 
-/* treemap grid */
+/* Treemap */
 .treemap-container {
   position: relative;
   width: 100%;
-  min-height: 300px;
-  border-radius: 1rem;
+  min-height: 280px;
+  border-radius: 0.75rem;
   overflow: hidden;
+  background: linear-gradient(135deg, #0a0a0f 0%, #12121a 100%);
 }
 
 .treemap-cell {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   box-sizing: border-box;
   overflow: hidden;
   cursor: default;
   transition: z-index 0s;
-  will-change: transform;
 }
-.treemap-cell:hover { z-index: 50 }
+.treemap-cell:hover { z-index: 50; }
 
 .treemap-cell-inner {
   position: absolute;
@@ -50,23 +68,65 @@ input[type="number"] {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  transition: transform .15s ease-out, box-shadow .2s ease;
+  transition: transform 0.15s ease-out, box-shadow 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .treemap-cell:hover .treemap-cell-inner {
-  box-shadow: 0 16px 32px -8px rgba(0,0,0,.12);
-  transform: scale(1.015);
+  box-shadow: 0 0 30px rgba(0, 245, 255, 0.2);
+  transform: scale(1.02);
 }
 
-.treemap-cell-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Search dropdown */
+#search-dropdown::-webkit-scrollbar { width: 4px; }
+#search-dropdown::-webkit-scrollbar-thumb { background-color: #2a2a3e; border-radius: 10px; }
+
+/* Glow effects */
+.glow-cyan { text-shadow: 0 0 10px rgba(0, 245, 255, 0.5); }
+.glow-pink { text-shadow: 0 0 10px rgba(255, 45, 149, 0.5); }
+.glow-purple { text-shadow: 0 0 10px rgba(176, 38, 255, 0.5); }
+
+/* Light theme overrides */
+html:not(.dark) body {
+  background: #f8f9fb;
+  color: #1e293b;
 }
 
-/* search dropdown scrollbar */
-#search-dropdown::-webkit-scrollbar { width: 4px }
-#search-dropdown::-webkit-scrollbar-thumb {
-  background-color: #e2e8f0;
-  border-radius: 10px;
+html:not(.dark) .bg-retro-card { background: #fff; }
+html:not(.dark) .bg-retro-dark { background: #f8f9fb; }
+html:not(.dark) .bg-retro-darker { background: #f1f5f9; }
+html:not(.dark) .border-retro-border { border-color: #e2e8f0; }
+html:not(.dark) .text-white { color: #1e293b; }
+html:not(.dark) .text-gray-300 { color: #475569; }
+html:not(.dark) .text-gray-500 { color: #64748b; }
+html:not(.dark) .text-gray-600 { color: #94a3b8; }
+html:not(.dark) .text-neon-cyan { color: #0891b2; }
+html:not(.dark) .text-neon-pink { color: #db2777; }
+html:not(.dark) .text-neon-purple { color: #7c3aed; }
+
+html:not(.dark) .scan-lines,
+html:not(.dark) .retro-grid { display: none; }
+
+html:not(.dark) .treemap-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+html:not(.dark) .treemap-cell-inner {
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+html:not(.dark) .treemap-cell:hover .treemap-cell-inner {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Subscription list item hover */
+.sub-item {
+  transition: all 0.15s ease;
+}
+.sub-item:hover {
+  border-color: rgba(0, 245, 255, 0.3);
+}
+
+html:not(.dark) .sub-item:hover {
+  border-color: #cbd5e1;
 }

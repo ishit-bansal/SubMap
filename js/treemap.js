@@ -1,39 +1,46 @@
-/*
- * squarified treemap layout
- * based on the bruls et al. algorithm
+/**
+ * Squarified Treemap Layout Algorithm
+ * Based on: Bruls, Huizing, van Wijk (2000)
  * https://www.win.tue.nl/~vanwijk/stm.pdf
+ * 
+ * The algorithm divides a rectangle into smaller rectangles
+ * with areas proportional to input values, optimizing for
+ * aspect ratios close to 1 (making cells as square as possible)
  */
+
 class Treemap {
   constructor(width, height) {
     this.width = width;
     this.height = height;
-    this.cellGap = 4;
+    this.cellGap = 4; // Gap between cells in pixels
   }
 
+  /**
+   * Main entry point - takes items with 'val' property
+   * Returns array of rectangles with x, y, w, h coordinates
+   */
   layout(items) {
     if (items.length === 0) return [];
 
-    let total = 0;
-    for (let i = 0; i < items.length; i++) {
-      total += items[i].val;
-    }
-
-    const normalized = [];
+    // Calculate total value for proportional sizing
+    const total = items.reduce((sum, item) => sum + item.val, 0);
     const totalArea = this.width * this.height;
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      normalized.push({
-        ...item,
-        area: (item.val / total) * totalArea
-      });
-    }
+    // Normalize items to include their target area
+    const normalized = items.map(item => ({
+      ...item,
+      area: (item.val / total) * totalArea
+    }));
 
     const rectangles = [];
     this._squarify(normalized, [], 0, 0, this.width, this.height, rectangles);
     return rectangles;
   }
 
+  /**
+   * Recursive squarification - tries to make cells as square as possible
+   * by comparing aspect ratios when adding items to the current row
+   */
   _squarify(remaining, currentRow, x, y, w, h, output) {
     if (remaining.length === 0) {
       this._layoutRow(currentRow, x, y, w, h, output);
@@ -43,56 +50,51 @@ class Treemap {
     const next = remaining[0];
     const withNext = currentRow.concat([next]);
 
+    // Add to current row if it improves (or maintains) aspect ratio
     if (currentRow.length === 0 || this._worstRatio(currentRow, w, h) >= this._worstRatio(withNext, w, h)) {
       this._squarify(remaining.slice(1), withNext, x, y, w, h, output);
     } else {
+      // Start new row
       const bounds = this._layoutRow(currentRow, x, y, w, h, output);
       this._squarify(remaining, [], bounds.nx, bounds.ny, bounds.nw, bounds.nh, output);
     }
   }
 
+  /**
+   * Calculate worst aspect ratio in a row
+   * Lower is better (closer to 1 = more square)
+   */
   _worstRatio(row, w, h) {
     if (row.length === 0) return Infinity;
 
-    let areaSum = 0;
-    for (let i = 0; i < row.length; i++) {
-      areaSum += row[i].area;
-    }
-
+    const areaSum = row.reduce((sum, item) => sum + item.area, 0);
     const shortSide = Math.min(w, h);
     const rowThickness = areaSum / shortSide;
 
     let worstRatio = 0;
-    for (let i = 0; i < row.length; i++) {
-      const itemLength = row[i].area / rowThickness;
+    for (const item of row) {
+      const itemLength = item.area / rowThickness;
       const ratio = Math.max(rowThickness / itemLength, itemLength / rowThickness);
-      if (ratio > worstRatio) {
-        worstRatio = ratio;
-      }
+      if (ratio > worstRatio) worstRatio = ratio;
     }
 
     return worstRatio;
   }
 
+  /**
+   * Layout a row of items, returns new bounds for remaining space
+   */
   _layoutRow(row, x, y, w, h, output) {
-    if (row.length === 0) {
-      return { nx: x, ny: y, nw: w, nh: h };
-    }
+    if (row.length === 0) return { nx: x, ny: y, nw: w, nh: h };
 
-    let areaSum = 0;
-    for (let i = 0; i < row.length; i++) {
-      areaSum += row[i].area;
-    }
-
-    const horizontal = (w >= h);
+    const areaSum = row.reduce((sum, item) => sum + item.area, 0);
+    const horizontal = w >= h;
     const shortSide = horizontal ? h : w;
     const thickness = areaSum / shortSide;
     const gap = this.cellGap;
 
     let offset = 0;
-
-    for (let i = 0; i < row.length; i++) {
-      const item = row[i];
+    for (const item of row) {
       const length = item.area / thickness;
 
       if (horizontal) {
@@ -112,67 +114,11 @@ class Treemap {
           h: thickness - gap
         });
       }
-
       offset += length;
     }
 
-    if (horizontal) {
-      return { nx: x + thickness, ny: y, nw: w - thickness, nh: h };
-    } else {
-      return { nx: x, ny: y + thickness, nw: w, nh: h - thickness };
-    }
+    return horizontal
+      ? { nx: x + thickness, ny: y, nw: w - thickness, nh: h }
+      : { nx: x, ny: y + thickness, nw: w, nh: h - thickness };
   }
-}
-
-async function exportAsImage() {
-  const exportContainer = document.getElementById("export-container");
-  if (!exportContainer) return;
-
-  const btn = event.target.closest("button");
-  if (!btn) return;
-  
-  const originalHtml = btn.innerHTML;
-  btn.innerHTML = '<span class="iconify h-4 w-4 animate-spin" data-icon="ph:spinner-bold"></span>';
-  btn.disabled = true;
-
-  try {
-    const pngUrl = await modernScreenshot.domToPng(exportContainer, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      style: {
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        borderRadius: "2rem",
-        overflow: "hidden"
-      },
-      onCloneNode: function(node) {
-        if (node.style) {
-          node.style.fontFamily = "system-ui, -apple-system, sans-serif";
-        }
-        if (node.querySelectorAll) {
-          var elements = node.querySelectorAll("*");
-          for (var i = 0; i < elements.length; i++) {
-            if (elements[i].style) {
-              elements[i].style.fontFamily = "system-ui, -apple-system, sans-serif";
-            }
-          }
-        }
-        return node;
-      },
-      fetch: { bypassingCache: true }
-    });
-
-    var downloadLink = document.createElement("a");
-    downloadLink.href = pngUrl;
-    downloadLink.download = "subscriptions-" + new Date().toISOString().split("T")[0] + ".png";
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    downloadLink.remove();
-
-  } catch (err) {
-    console.error("export failed:", err);
-    alert("Export failed: " + err.message);
-  }
-
-  btn.innerHTML = originalHtml;
-  btn.disabled = false;
 }
