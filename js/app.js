@@ -524,7 +524,7 @@ function renderGrid() {
 
     const delay = i * 50;
     html += '<div class="treemap-cell tile-enter" style="left:' + cell.x + 'px;top:' + cell.y + 'px;width:' + cell.w + 'px;height:' + cell.h + 'px;border-radius:' + borderRadius + 'px;animation-delay:' + delay + 'ms">';
-    html += '<div class="treemap-cell-inner" style="background:linear-gradient(135deg,' + color.bg + ',' + color.accent + ');padding:' + padding + 'px;border-radius:' + Math.max(4, borderRadius - 2) + 'px">' + content + '</div></div>';
+    html += '<div class="treemap-cell-inner" style="background:linear-gradient(135deg,' + color.bg + ',' + color.accent + ');padding:' + padding + 'px;border-radius:' + borderRadius + 'px">' + content + '</div></div>';
   }
 
   gridEl.innerHTML = html;
