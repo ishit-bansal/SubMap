@@ -291,18 +291,18 @@ function renderList() {
   let html = '';
   for (const sub of subs) {
     const color = getColor(sub.color);
-    html += '<div class="sub-item flex items-center gap-3 p-2.5 bg-retro-darker rounded-lg" data-id="' + sub.id + '">';
-    html += '<div class="w-1 h-8 rounded-full" style="background:' + color.accent + '"></div>';
-    html += iconHtml(sub, 'w-9 h-9', true);
+    html += '<div class="sub-item flex items-center gap-2 p-2 bg-retro-darker rounded-lg" data-id="' + sub.id + '">';
+    html += '<div class="w-0.5 h-6 rounded-full shrink-0" style="background:' + color.accent + '"></div>';
+    html += iconHtml(sub, 'w-7 h-7', true);
     html += '<div class="flex-1 min-w-0">';
-    html += '<div class="font-semibold text-white text-sm truncate">' + sub.name + '</div>';
-    html += '<div class="flex items-baseline gap-0 text-xs font-mono">';
+    html += '<div class="font-medium text-white text-xs truncate">' + sub.name + '</div>';
+    html += '<div class="flex items-baseline text-[11px] font-mono">';
     html += '<span class="text-gray-400">$</span>';
-    html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-14 bg-transparent border-0 p-0 text-sm font-bold text-gray-300 focus:ring-0 focus:text-neon-cyan"/>';
-    html += '<span class="text-gray-500 text-[10px]">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span>';
+    html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-12 bg-transparent border-0 p-0 text-xs font-bold text-gray-300 focus:ring-0 focus:text-neon-cyan"/>';
+    html += '<span class="text-gray-500 text-[9px]">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span>';
     html += '</div></div>';
-    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="delete-btn text-gray-600 hover:text-neon-pink p-1.5 rounded transition-colors">';
-    html += '<span class="iconify h-4 w-4" data-icon="ph:x-bold"></span></button></div>';
+    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="text-gray-500 p-0.5 shrink-0">';
+    html += '<span class="iconify h-3 w-3" data-icon="ph:x"></span></button></div>';
   }
   listContainer.innerHTML = html;
   updateUsedColors();

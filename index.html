@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SubMap – Subscription Cost Visualizer</title>
     <meta name="description" content="Visualize how much time you work to pay for your subscriptions." />
-    <meta name="keywords" content="subscription tracker, cost visualizer, budget, subscriptions, money management" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
@@ -32,23 +31,19 @@
                 border: '#1f1f2e',
               }
             },
-            boxShadow: {
-              neon: '0 0 20px rgba(0, 245, 255, 0.3)',
-            },
           },
         },
       };
     </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="min-h-screen bg-retro-dark font-sans text-white selection:bg-neon-cyan/30">
-    <!-- Retro overlays -->
+  <body class="h-screen overflow-hidden bg-retro-dark font-sans text-white selection:bg-neon-cyan/30">
     <div class="scan-lines"></div>
     <div class="retro-grid"></div>
     
-    <div class="min-h-screen flex flex-col p-4 lg:p-6">
+    <div class="h-screen flex flex-col p-4 lg:p-6">
       <!-- Header -->
-      <header class="flex items-center justify-between mb-4 lg:mb-6 shrink-0">
+      <header class="flex items-center justify-between mb-4 shrink-0">
         <div>
           <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">
             <span class="text-neon-cyan">Sub</span><span class="text-neon-pink">Map</span>
@@ -61,10 +56,10 @@
         </button>
       </header>
 
-      <!-- Main Content - Both panels stretch to same height -->
-      <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-stretch">
-        <!-- Left Panel - Flex column that stretches -->
-        <section class="flex flex-col gap-4 lg:w-[360px] lg:shrink-0 lg:self-stretch">
+      <!-- Main Content - Fixed height, no scroll -->
+      <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
+        <!-- Left Panel -->
+        <section class="flex flex-col gap-3 lg:w-[340px] lg:shrink-0 min-h-0">
           <!-- Search Bar -->
           <div class="relative shrink-0" id="search-container">
             <span class="iconify absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 pointer-events-none" data-icon="ph:magnifying-glass"></span>
@@ -77,23 +72,23 @@
               oninput="handleSearchInput(this.value)"
               onkeydown="handleSearchKeydown(event)"
               autocomplete="off"
-              class="w-full rounded-xl border border-retro-border bg-retro-card py-3 pl-10 pr-4 text-sm font-medium text-white placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan/50 transition-all"
+              class="w-full rounded-lg border border-retro-border bg-retro-card py-2.5 pl-10 pr-4 text-sm font-medium text-white placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none transition-all"
             />
-            <div id="search-dropdown" class="absolute left-0 right-0 top-full z-40 mt-2 hidden max-h-[40vh] overflow-y-auto rounded-xl shadow-2xl"></div>
+            <div id="search-dropdown" class="absolute left-0 right-0 top-full z-40 mt-1 hidden max-h-[35vh] overflow-y-auto rounded-lg shadow-2xl"></div>
           </div>
 
-          <!-- Subscriptions List - Flex to fill remaining space -->
-          <div class="flex-1 min-h-[200px] rounded-xl border border-retro-border bg-retro-card overflow-hidden flex flex-col">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-retro-border shrink-0">
-              <span class="text-xs font-mono text-gray-500 uppercase tracking-wider">Subscriptions</span>
-              <button onclick="clearAllSubs()" id="clear-btn" class="hidden text-xs font-mono text-gray-500 hover:text-neon-pink transition-colors">clear</button>
+          <!-- Subscriptions List -->
+          <div class="flex-1 min-h-0 rounded-lg border border-retro-border bg-retro-card overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-3 py-2 border-b border-retro-border shrink-0">
+              <span class="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Subscriptions</span>
+              <button onclick="clearAllSubs()" id="clear-btn" class="hidden text-[10px] font-mono text-gray-500 hover:text-neon-pink transition-colors">clear</button>
             </div>
-            <div id="sub-list-container" class="flex-1 overflow-y-auto p-2 space-y-1.5"></div>
+            <div id="sub-list-container" class="flex-1 overflow-y-auto p-1.5 space-y-1"></div>
           </div>
 
-          <!-- Income Section - Fixed at bottom -->
-          <div class="rounded-xl border border-retro-border bg-retro-card p-4 shrink-0">
-            <div class="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">Your Income</div>
+          <!-- Income Section -->
+          <div class="rounded-lg border border-retro-border bg-retro-card p-3 shrink-0">
+            <div class="text-[10px] font-mono text-gray-500 uppercase tracking-wider mb-2">Your Income</div>
             <div class="flex gap-2">
               <input
                 id="income-amount"
@@ -101,7 +96,7 @@
                 step="0.01"
                 placeholder="0.00"
                 oninput="handleIncomeChange()"
-                class="flex-1 min-w-0 rounded-lg border border-retro-border bg-retro-darker px-3 py-2 text-base font-bold text-white placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none font-mono"
+                class="flex-1 min-w-0 rounded-lg border border-retro-border bg-retro-darker px-3 py-2 text-sm font-bold text-white placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none font-mono"
               />
               <select
                 id="income-unit"
@@ -118,25 +113,25 @@
         </section>
 
         <!-- Right Panel - Map -->
-        <section class="flex-1 min-h-[400px] rounded-xl border border-retro-border bg-retro-card p-4 lg:p-5 flex flex-col">
+        <section class="flex-1 min-h-0 rounded-lg border border-retro-border bg-retro-card p-4 flex flex-col">
           <!-- Stats Row -->
-          <div class="grid grid-cols-3 gap-4 mb-4 shrink-0">
+          <div class="grid grid-cols-3 gap-4 mb-3 shrink-0">
             <div class="text-center">
-              <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Monthly</div>
-              <div class="text-xl lg:text-2xl font-black text-white font-mono" id="step-2-total">$0</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-0.5">Monthly</div>
+              <div class="text-lg lg:text-xl font-black text-white font-mono" id="step-2-total">$0</div>
             </div>
             <div class="text-center">
-              <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Yearly</div>
-              <div class="text-xl lg:text-2xl font-bold text-neon-purple font-mono" id="step-2-yearly">$0</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-0.5">Yearly</div>
+              <div class="text-lg lg:text-xl font-bold text-neon-purple font-mono" id="step-2-yearly">$0</div>
             </div>
             <div class="text-center">
-              <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Work Time/yr</div>
-              <div class="text-xl lg:text-2xl font-bold text-neon-cyan font-mono" id="time-worked">—</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-0.5">Work Time/yr</div>
+              <div class="text-lg lg:text-xl font-bold text-neon-cyan font-mono" id="time-worked">—</div>
             </div>
           </div>
 
           <!-- Treemap Grid -->
-          <div id="bento-grid" class="treemap-container flex-1 rounded-xl"></div>
+          <div id="bento-grid" class="treemap-container flex-1 min-h-0 rounded-lg"></div>
         </section>
       </main>
     </div>
@@ -154,7 +149,6 @@
 
         <form id="sub-form" onsubmit="handleFormSubmit(event)" class="space-y-4 overflow-y-auto p-4">
           <input type="hidden" id="entry-id" />
-
           <div class="flex gap-3">
             <div id="favicon-preview" class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-retro-border bg-retro-darker">
               <span class="iconify h-6 w-6 text-gray-600" data-icon="ph:globe-simple"></span>
@@ -164,7 +158,6 @@
               <input type="text" id="url" placeholder="website.com" oninput="updateFavicon(this.value)" class="block w-full rounded-lg border border-retro-border bg-retro-darker px-3 py-1.5 text-xs text-gray-300 placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none" />
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="mb-1 block text-[10px] font-mono text-gray-500 uppercase">Price</label>
@@ -179,14 +172,12 @@
               </select>
             </div>
           </div>
-
           <div>
             <label class="mb-1.5 block text-[10px] font-mono text-gray-500 uppercase">Color</label>
             <div class="grid grid-cols-8 gap-1.5" id="color-selector"></div>
             <input type="hidden" id="selected-color" value="" />
           </div>
           <input type="hidden" id="date" value="" />
-
           <button type="submit" class="w-full rounded-lg bg-neon-cyan py-2.5 text-sm font-bold text-retro-dark transition-all hover:shadow-neon active:scale-[0.98] font-mono">
             save()
           </button>
