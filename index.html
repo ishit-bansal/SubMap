@@ -38,10 +38,6 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="min-h-screen bg-retro-dark font-sans text-white selection:bg-neon-cyan/30">
-    <div class="scan-lines"></div>
-    <div class="retro-grid"></div>
-    
-    <!-- Desktop: h-screen no scroll. Mobile: min-h-screen allows scroll -->
     <div class="flex flex-col p-4 lg:p-6 min-h-screen lg:h-screen lg:overflow-hidden">
       <!-- Header -->
       <header class="flex items-center justify-between mb-4 shrink-0">
@@ -59,8 +55,8 @@
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:min-h-0">
-        <!-- Left Panel -->
-        <section class="flex flex-col gap-3 lg:w-[340px] lg:shrink-0 lg:min-h-0">
+        <!-- Left Panel - stretches to match right panel -->
+        <section class="flex flex-col gap-3 lg:w-[340px] lg:shrink-0 lg:min-h-0 lg:self-stretch">
           <!-- Search Bar -->
           <div class="relative shrink-0" id="search-container">
             <span class="iconify absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 pointer-events-none" data-icon="ph:magnifying-glass"></span>
@@ -78,8 +74,8 @@
             <div id="search-dropdown" class="absolute left-0 right-0 top-full z-40 mt-1 hidden max-h-[35vh] overflow-y-auto rounded-lg shadow-2xl"></div>
           </div>
 
-          <!-- Subscriptions List -->
-          <div class="flex-1 lg:min-h-0 rounded-lg border border-retro-border bg-retro-card overflow-hidden flex flex-col" style="min-height: 180px; max-height: 50vh;">
+          <!-- Subscriptions List - flex-1 to fill remaining space -->
+          <div class="flex-1 min-h-[150px] rounded-lg border border-retro-border bg-retro-card overflow-hidden flex flex-col">
             <div class="flex items-center justify-between px-3 py-2 border-b border-retro-border shrink-0">
               <span class="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Subscriptions</span>
               <button onclick="clearAllSubs()" id="clear-btn" class="hidden text-[10px] font-mono text-gray-500 hover:text-neon-pink transition-colors">clear</button>
