@@ -1,32 +1,25 @@
 /**
- * SubGrid - Subscription Cost Visualizer
- * 
- * HOW IT WORKS:
- * 1. Subscriptions are stored in localStorage as JSON
- * 2. Logos are fetched from logo.dev API using the domain name
- *    Example: https://img.logo.dev/netflix.com?token=...
- * 3. The treemap algorithm (squarified) divides the grid into rectangles
- *    proportional to each subscription's monthly cost
- * 4. Work time is calculated based on user's income and unit selection
+ * SubMap - Subscription Cost Visualizer
  */
 
 let subs = [];
 let incomeState = { amount: 0, unit: 'hourly' };
 let isDark = true;
+let selectedSearchIndex = 0;
+let searchResults = [];
 
-// Color palette for subscription tiles
+// Color palette - dark has deep saturated colors, light has unique pastel tones
 const colors = [
-  { id: 'purple', bg: '#2d1b4e', accent: '#7c3aed', light: { bg: '#FAF5FF', accent: '#E9D5FF' } },
-  { id: 'blue', bg: '#1e3a5f', accent: '#3b82f6', light: { bg: '#EFF6FF', accent: '#BFDBFE' } },
-  { id: 'cyan', bg: '#164e63', accent: '#06b6d4', light: { bg: '#ECFEFF', accent: '#A5F3FC' } },
-  { id: 'green', bg: '#14532d', accent: '#22c55e', light: { bg: '#F0FDF4', accent: '#BBF7D0' } },
-  { id: 'yellow', bg: '#422006', accent: '#eab308', light: { bg: '#FEFCE8', accent: '#FEF08A' } },
-  { id: 'orange', bg: '#431407', accent: '#f97316', light: { bg: '#FFF7ED', accent: '#FED7AA' } },
-  { id: 'pink', bg: '#500724', accent: '#ec4899', light: { bg: '#FDF2F8', accent: '#FBCFE8' } },
-  { id: 'rose', bg: '#4c0519', accent: '#f43f5e', light: { bg: '#FFF1F2', accent: '#FECDD3' } },
+  { id: 'purple', bg: '#2d1b4e', accent: '#9333ea', light: { bg: '#c4b5fd', accent: '#7c3aed' } },
+  { id: 'blue', bg: '#1e3a5f', accent: '#3b82f6', light: { bg: '#93c5fd', accent: '#2563eb' } },
+  { id: 'cyan', bg: '#164e63', accent: '#06b6d4', light: { bg: '#67e8f9', accent: '#0891b2' } },
+  { id: 'green', bg: '#14532d', accent: '#22c55e', light: { bg: '#86efac', accent: '#16a34a' } },
+  { id: 'yellow', bg: '#422006', accent: '#eab308', light: { bg: '#fde047', accent: '#ca8a04' } },
+  { id: 'orange', bg: '#431407', accent: '#f97316', light: { bg: '#fdba74', accent: '#ea580c' } },
+  { id: 'pink', bg: '#500724', accent: '#ec4899', light: { bg: '#f9a8d4', accent: '#db2777' } },
+  { id: 'rose', bg: '#4c0519', accent: '#f43f5e', light: { bg: '#fda4af', accent: '#e11d48' } },
 ];
 
-// Default subscriptions for new users
 const defaultSubs = [
   { name: 'Netflix', domain: 'netflix.com', price: 17.99, cycle: 'Monthly', color: 'rose' },
   { name: 'Spotify', domain: 'spotify.com', price: 11.99, cycle: 'Monthly', color: 'green' },
@@ -41,7 +34,6 @@ function getColor(colorId) {
   return isDark ? { bg: c.bg, accent: c.accent } : c.light;
 }
 
-// Format money with appropriate precision
 function formatMoney(amount) {
   const n = Number.isFinite(amount) ? amount : 0;
   return n >= 1000 ? '$' + n.toFixed(0) : '$' + n.toFixed(2);
@@ -54,25 +46,17 @@ function formatShort(amount) {
   return n >= 100 ? '$' + n.toFixed(0) : '$' + n.toFixed(2);
 }
 
-// Convert any billing cycle to monthly cost
 function toMonthly(sub) {
   if (sub.cycle === 'Yearly') return sub.price / 12;
   if (sub.cycle === 'Weekly') return sub.price * 4.33;
   return sub.price;
 }
 
-/**
- * Generate HTML for subscription icon/logo
- * Uses logo.dev API to fetch brand logos by domain name
- * Falls back to a generic icon if no domain is provided
- */
 function iconHtml(sub, className) {
   if (!sub.url) {
     return '<span class="iconify ' + className + ' text-gray-400" data-icon="ph:cube-bold"></span>';
   }
-  // Extract domain from URL (removes http://, https://, www.)
   const domain = sub.url.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-  // logo.dev provides high-quality brand logos via simple URL
   const logoUrl = 'https://img.logo.dev/' + domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
   return '<img src="' + logoUrl + '" class="' + className + ' object-contain rounded-lg" crossorigin="anonymous">';
 }
@@ -81,11 +65,12 @@ function getMonthlyTotal() {
   return subs.reduce((sum, sub) => sum + toMonthly(sub), 0);
 }
 
-// ===== Search Dropdown =====
+// ===== Search with Enter key support =====
 function openSearchDropdown() {
   const dropdown = document.getElementById('search-dropdown');
   if (dropdown) {
     dropdown.classList.remove('hidden');
+    selectedSearchIndex = 0;
     renderSearchResults(document.getElementById('main-search').value);
   }
 }
@@ -93,10 +78,53 @@ function openSearchDropdown() {
 function closeSearchDropdown() {
   const dropdown = document.getElementById('search-dropdown');
   if (dropdown) dropdown.classList.add('hidden');
+  selectedSearchIndex = 0;
 }
 
 function handleSearchInput(query) {
+  selectedSearchIndex = 0;
   renderSearchResults(query);
+}
+
+function handleSearchKeydown(e) {
+  const dropdown = document.getElementById('search-dropdown');
+  if (!dropdown || dropdown.classList.contains('hidden')) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectedSearchIndex = Math.min(selectedSearchIndex + 1, searchResults.length - 1);
+    updateSearchHighlight();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectedSearchIndex = Math.max(selectedSearchIndex - 1, 0);
+    updateSearchHighlight();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (searchResults.length > 0 && searchResults[selectedSearchIndex]) {
+      const item = searchResults[selectedSearchIndex];
+      if (item.type === 'preset') {
+        quickAddPreset(item.idx);
+      } else if (item.type === 'custom') {
+        addCustomFromSearch(item.name);
+      }
+    }
+  } else if (e.key === 'Escape') {
+    closeSearchDropdown();
+    document.getElementById('main-search').blur();
+  }
+}
+
+function updateSearchHighlight() {
+  const buttons = document.querySelectorAll('#search-dropdown .search-item');
+  buttons.forEach((btn, i) => {
+    if (i === selectedSearchIndex) {
+      btn.classList.add('bg-neon-cyan/20', 'border-l-2', 'border-l-neon-cyan');
+      btn.classList.remove('hover:bg-retro-border');
+    } else {
+      btn.classList.remove('bg-neon-cyan/20', 'border-l-2', 'border-l-neon-cyan');
+      btn.classList.add('hover:bg-retro-border');
+    }
+  });
 }
 
 function renderSearchResults(query) {
@@ -104,52 +132,60 @@ function renderSearchResults(query) {
   if (!dropdown) return;
 
   const q = (query || '').toLowerCase().trim();
-  let results = presets;
+  let filtered = presets;
 
   if (q.length > 0) {
-    results = presets.filter(p =>
+    filtered = presets.filter(p =>
       p.name.toLowerCase().includes(q) ||
       p.category.toLowerCase().includes(q) ||
       p.domain.toLowerCase().includes(q)
     );
   }
 
+  searchResults = [];
   let html = '';
 
-  // Custom add option
-  if (q.length > 0) {
-    html += '<button onclick="addCustomFromSearch(\'' + q.replace(/'/g, "\\'") + '\')" class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-retro-border transition-colors border-b border-retro-border">';
-    html += '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neon-cyan/20 text-neon-cyan">';
-    html += '<span class="iconify h-5 w-5" data-icon="ph:plus-bold"></span></div>';
-    html += '<div><div class="font-semibold text-white">Add "' + q + '"</div>';
-    html += '<div class="text-xs text-gray-500 font-mono">custom</div></div></button>';
-  }
-
-  // Group by category
+  // First: matching presets (first one will be highlighted for Enter)
   const byCategory = {};
-  for (const p of results) {
+  for (const p of filtered) {
     if (!byCategory[p.category]) byCategory[p.category] = [];
     byCategory[p.category].push(p);
   }
 
   for (const cat of Object.keys(byCategory)) {
-    html += '<div class="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-gray-500 bg-retro-darker">' + cat + '</div>';
+    html += '<div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-gray-500 bg-retro-darker">' + cat + '</div>';
     for (const p of byCategory[cat]) {
       const idx = presets.indexOf(p);
       const logo = 'https://img.logo.dev/' + p.domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
-      html += '<button onclick="quickAddPreset(' + idx + ')" class="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-retro-border transition-colors">';
-      html += '<img src="' + logo + '" class="h-8 w-8 rounded-lg object-contain">';
+      const isSelected = searchResults.length === selectedSearchIndex;
+      searchResults.push({ type: 'preset', idx });
+      html += '<button onclick="quickAddPreset(' + idx + ')" class="search-item flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ' + (isSelected ? 'bg-neon-cyan/20 border-l-2 border-l-neon-cyan' : 'hover:bg-retro-border') + '">';
+      html += '<img src="' + logo + '" class="h-7 w-7 rounded-lg object-contain">';
       html += '<div class="flex-1 font-semibold text-white text-sm">' + p.name + '</div>';
-      html += '<div class="text-sm font-mono text-gray-400">$' + p.price + '</div></button>';
+      html += '<div class="text-xs font-mono text-gray-400">$' + p.price + '</div></button>';
     }
   }
 
-  dropdown.innerHTML = html || '<div class="p-6 text-center text-gray-500 font-mono">Start typing...</div>';
+  // Custom add option at bottom
+  if (q.length > 0) {
+    searchResults.push({ type: 'custom', name: q });
+    const isSelected = searchResults.length - 1 === selectedSearchIndex;
+    html += '<div class="border-t border-retro-border">';
+    html += '<button onclick="addCustomFromSearch(\'' + q.replace(/'/g, "\\'") + '\')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'bg-neon-cyan/20 border-l-2 border-l-neon-cyan' : 'hover:bg-retro-border') + '">';
+    html += '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-700 text-gray-400">';
+    html += '<span class="iconify h-4 w-4" data-icon="ph:plus-bold"></span></div>';
+    html += '<div class="flex-1"><div class="font-semibold text-gray-300 text-sm">Add "' + q + '" manually</div></div></button></div>';
+  }
+
+  dropdown.innerHTML = html || '<div class="p-4 text-center text-gray-500 text-sm">Type to search...</div>';
 }
 
 function quickAddPreset(idx) {
   const preset = presets[idx];
   if (!preset) return;
+  
+  playSound('add');
+  
   subs.push({
     id: Date.now().toString(),
     name: preset.name,
@@ -165,6 +201,7 @@ function quickAddPreset(idx) {
 }
 
 function addCustomFromSearch(name) {
+  playSound('click');
   closeSearchDropdown();
   document.getElementById('main-search').value = '';
   openModalWithName(name);
@@ -191,28 +228,27 @@ function renderList() {
   if (!listContainer) return;
 
   if (subs.length === 0) {
-    listContainer.innerHTML = '<div class="text-center py-8 text-gray-500 text-sm font-mono">No subscriptions yet</div>';
+    listContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500 text-xs font-mono">No subscriptions</div>';
     if (clearBtn) clearBtn.classList.add('hidden');
     return;
   }
 
-  if (clearBtn) clearBtn.classList.remove('hidden'), clearBtn.classList.add('flex');
+  if (clearBtn) clearBtn.classList.remove('hidden');
 
   let html = '';
   for (const sub of subs) {
     const color = getColor(sub.color);
-    html += '<div class="sub-item flex items-center gap-3 p-3 bg-retro-card border border-retro-border rounded-xl group">';
-    html += '<div class="w-1 h-8 rounded-full" style="background:linear-gradient(180deg,' + color.bg + ',' + color.accent + ')"></div>';
-    html += iconHtml(sub, 'w-8 h-8');
+    html += '<div class="sub-item flex items-center gap-2 p-2 bg-retro-darker rounded-lg group">';
+    html += '<div class="w-0.5 h-6 rounded-full" style="background:' + color.accent + '"></div>';
+    html += iconHtml(sub, 'w-6 h-6');
     html += '<div class="flex-1 min-w-0">';
-    html += '<div class="font-semibold text-white text-sm truncate">' + sub.name + '</div>';
-    html += '<div class="flex items-center">';
-    html += '<span class="text-xs font-mono text-gray-400">$</span>';
-    html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-14 text-xs font-mono text-gray-400 bg-transparent border-0 p-0 focus:ring-0 focus:text-neon-cyan"/>';
-    html += '<span class="text-xs font-mono text-gray-500">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span>';
+    html += '<div class="font-semibold text-white text-xs truncate">' + sub.name + '</div>';
+    html += '<div class="flex items-center text-[10px] font-mono text-gray-500">';
+    html += '$<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-10 bg-transparent border-0 p-0 text-[10px] font-mono text-gray-500 focus:ring-0 focus:text-neon-cyan"/>';
+    html += '/' + sub.cycle.toLowerCase().slice(0, 2);
     html += '</div></div>';
-    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-neon-pink p-1 transition-all">';
-    html += '<span class="iconify h-4 w-4" data-icon="ph:x-bold"></span></button></div>';
+    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-neon-pink p-1 transition-all">';
+    html += '<span class="iconify h-3 w-3" data-icon="ph:x-bold"></span></button></div>';
   }
   listContainer.innerHTML = html;
 }
@@ -223,12 +259,14 @@ function updateSubPrice(id, val) {
 }
 
 function removeSub(id) {
+  playSound('remove');
   subs = subs.filter(s => s.id !== id);
   save();
 }
 
 function clearAllSubs() {
   if (!confirm('Remove all subscriptions?')) return;
+  playSound('remove');
   subs = [];
   save();
 }
@@ -239,7 +277,7 @@ function initColorPicker() {
   if (!container) return;
   let html = '';
   for (const c of colors) {
-    html += '<div onclick="pickColor(\'' + c.id + '\')" class="color-option cursor-pointer rounded-lg h-8 border-2 border-transparent transition-all hover:scale-105" data-val="' + c.id + '" style="background:linear-gradient(135deg,' + c.bg + ',' + c.accent + ')"></div>';
+    html += '<div onclick="pickColor(\'' + c.id + '\')" class="color-option cursor-pointer rounded h-6 border-2 border-transparent transition-all hover:scale-110" data-val="' + c.id + '" style="background:linear-gradient(135deg,' + c.bg + ',' + c.accent + ')"></div>';
   }
   container.innerHTML = html;
 }
@@ -259,7 +297,7 @@ function updateFavicon(urlInput) {
     const preview = document.getElementById('favicon-preview');
     if (!preview) return;
     if (!urlInput) {
-      preview.innerHTML = '<span class="iconify text-gray-600 h-6 w-6" data-icon="ph:globe-simple"></span>';
+      preview.innerHTML = '<span class="iconify text-gray-600 h-5 w-5" data-icon="ph:globe-simple"></span>';
       return;
     }
     const domain = urlInput.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
@@ -287,13 +325,14 @@ function handleFormSubmit(evt) {
     const idx = subs.findIndex(s => s.id === existingId);
     if (idx !== -1) subs[idx] = subData;
   } else {
+    playSound('add');
     subs.push(subData);
   }
   save();
   hideModal();
 }
 
-// ===== Income & Work Time Calculation =====
+// ===== Income & Work Time =====
 function handleIncomeChange() {
   const amountInput = document.getElementById('income-amount');
   const unitSelect = document.getElementById('income-unit');
@@ -310,7 +349,7 @@ function getHourlyRate() {
     case 'hourly': return amount;
     case 'daily': return amount / 8;
     case 'weekly': return amount / 40;
-    case 'monthly': return amount / 173; // avg work hours per month
+    case 'monthly': return amount / 173;
     default: return 0;
   }
 }
@@ -330,10 +369,10 @@ function formatWorkTime(monthlyTotal) {
       return h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
     case 'daily':
       const days = totalHours / 8;
-      return days < 1 ? Math.round(days * 8) + 'h' : days.toFixed(1) + ' days';
+      return days < 1 ? Math.round(days * 8) + 'h' : days.toFixed(1) + 'd';
     case 'weekly':
       const weeks = totalHours / 40;
-      return weeks < 1 ? Math.round(weeks * 5) + ' days' : weeks.toFixed(1) + ' weeks';
+      return weeks < 1 ? Math.round(weeks * 5) + 'd' : weeks.toFixed(1) + 'w';
     case 'monthly':
       return ((monthlyTotal / amount) * 100).toFixed(1) + '%';
     default: return '—';
@@ -344,7 +383,6 @@ function updateTotals(monthlyTotal) {
   const totalEl = document.getElementById('step-2-total');
   const yearlyEl = document.getElementById('step-2-yearly');
   const timeEl = document.getElementById('time-worked');
-  const hintEl = document.getElementById('income-hint');
 
   if (totalEl) totalEl.innerText = formatMoney(monthlyTotal);
   if (yearlyEl) yearlyEl.innerText = formatMoney(monthlyTotal * 12);
@@ -355,7 +393,7 @@ function renderTotals() {
   updateTotals(getMonthlyTotal());
 }
 
-// ===== Treemap Grid Rendering =====
+// ===== Treemap Grid with Animation =====
 function renderGrid() {
   const gridEl = document.getElementById('bento-grid');
   if (!gridEl) return;
@@ -387,7 +425,8 @@ function renderGrid() {
   const cells = treemap.layout(treemapData);
 
   let html = '';
-  for (const cell of cells) {
+  for (let i = 0; i < cells.length; i++) {
+    const cell = cells[i];
     const percent = monthlyTotal > 0 ? (cell.cost / monthlyTotal) * 100 : 0;
     const color = getColor(cell.color);
     const minDim = Math.min(cell.w, cell.h);
@@ -422,7 +461,9 @@ function renderGrid() {
       content += '</div><div class="mt-auto min-w-0"><div class="font-bold text-white truncate" style="font-size:' + titleFont + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + priceFont + 'px">' + priceLabel + '</div></div>';
     }
 
-    html += '<div class="treemap-cell" style="left:' + cell.x + 'px;top:' + cell.y + 'px;width:' + cell.w + 'px;height:' + cell.h + 'px;border-radius:' + borderRadius + 'px">';
+    // Add animation delay for staggered entrance
+    const delay = i * 50;
+    html += '<div class="treemap-cell tile-enter" style="left:' + cell.x + 'px;top:' + cell.y + 'px;width:' + cell.w + 'px;height:' + cell.h + 'px;border-radius:' + borderRadius + 'px;animation-delay:' + delay + 'ms">';
     html += '<div class="treemap-cell-inner" style="background:linear-gradient(135deg,' + color.bg + ',' + color.accent + ');padding:' + padding + 'px;border-radius:' + Math.max(4, borderRadius - 2) + 'px">' + content + '</div></div>';
   }
 
@@ -432,20 +473,35 @@ function renderGrid() {
 
 // ===== Theme Toggle =====
 function toggleTheme() {
+  playSound('theme');
   isDark = !isDark;
   document.documentElement.classList.toggle('dark', isDark);
-  localStorage.setItem('subgrid_theme', isDark ? 'dark' : 'light');
+  localStorage.setItem('submap_theme', isDark ? 'dark' : 'light');
+  
+  // Update theme button icon
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    const icon = btn.querySelector('.iconify');
+    if (icon) icon.setAttribute('data-icon', isDark ? 'ph:moon-bold' : 'ph:sun-bold');
+  }
+  
   renderList();
   renderGrid();
 }
 
 function loadTheme() {
-  const saved = localStorage.getItem('subgrid_theme');
+  const saved = localStorage.getItem('submap_theme');
   isDark = saved !== 'light';
   document.documentElement.classList.toggle('dark', isDark);
+  
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    const icon = btn.querySelector('.iconify');
+    if (icon) icon.setAttribute('data-icon', isDark ? 'ph:moon-bold' : 'ph:sun-bold');
+  }
 }
 
-// ===== Initialization =====
+// ===== Init =====
 function initDefaults() {
   if (subs.length === 0) {
     for (const def of defaultSubs) {
@@ -486,3 +542,4 @@ document.addEventListener('DOMContentLoaded', () => {
   const dateInput = document.getElementById('date');
   if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 });
+

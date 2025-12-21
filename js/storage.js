@@ -1,10 +1,9 @@
 /**
- * Storage module for SubGrid
- * Handles localStorage persistence for subscriptions and income settings
+ * Storage module for SubMap
  */
 
-const STORAGE_KEY = 'subgrid_subs';
-const INCOME_KEY = 'subgrid_income';
+const STORAGE_KEY = 'submap_subs';
+const INCOME_KEY = 'submap_income';
 
 function load() {
   try {
