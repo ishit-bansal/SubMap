@@ -120,6 +120,15 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   justify-content: center;
 }
 
+/* Delete button - gray normally, red on hover */
+.delete-btn {
+  color: #6b7280;
+  transition: color 0.15s ease;
+}
+.delete-btn:hover {
+  color: #ef4444;
+}
+
 /* === LIGHT THEME === */
 html:not(.dark) body {
   background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #fce7f3 100%);

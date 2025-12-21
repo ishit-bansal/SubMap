@@ -301,8 +301,8 @@ function renderList() {
     html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-12 bg-transparent border-0 p-0 text-xs font-bold text-gray-300 focus:ring-0 focus:text-neon-cyan"/>';
     html += '<span class="text-gray-500 text-[9px]">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span>';
     html += '</div></div>';
-    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="text-gray-500 p-0.5 shrink-0">';
-    html += '<span class="iconify h-3 w-3" data-icon="ph:x"></span></button></div>';
+    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="delete-btn p-1 shrink-0">';
+    html += '<span class="iconify h-4 w-4" data-icon="ph:x-bold"></span></button></div>';
   }
   listContainer.innerHTML = html;
   updateUsedColors();
