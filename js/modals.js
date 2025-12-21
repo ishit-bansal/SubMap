@@ -1,5 +1,5 @@
 /**
- * Modal handling for SubGrid
+ * Modal handling for SubMap
  */
 
 const backdrop = document.getElementById('modal-backdrop');
@@ -8,6 +8,7 @@ const modalInner = panel ? panel.querySelector('div') : null;
 
 function showModal() {
   if (!backdrop || !panel) return;
+  modalOpen = true;
   backdrop.classList.remove('hidden');
   panel.classList.remove('hidden');
   requestAnimationFrame(() => {
@@ -21,6 +22,7 @@ function showModal() {
 
 function hideModal() {
   if (!backdrop || !panel) return;
+  modalOpen = false;
   backdrop.classList.add('opacity-0');
   if (modalInner) {
     modalInner.classList.remove('translate-y-0', 'sm:scale-100', 'opacity-100');
@@ -41,7 +43,7 @@ function openModal() {
   document.getElementById('cycle').value = 'Monthly';
   document.getElementById('url').value = '';
   updateFavicon('');
-  pickColor(randColor().id);
+  pickColor(getUniqueColor().id);
   document.getElementById('modal-title').innerText = 'Add Subscription';
   showModal();
 }

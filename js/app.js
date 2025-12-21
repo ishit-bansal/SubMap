@@ -7,18 +7,30 @@ let incomeState = { amount: 0, unit: 'hourly' };
 let isDark = true;
 let selectedSearchIndex = 0;
 let searchResults = [];
+let modalOpen = false;
 
-// Color palette - dark has deep saturated colors, light has unique pastel tones
+// Extended color palette - more variety
 const colors = [
-  { id: 'purple', bg: '#2d1b4e', accent: '#9333ea', light: { bg: '#c4b5fd', accent: '#7c3aed' } },
-  { id: 'blue', bg: '#1e3a5f', accent: '#3b82f6', light: { bg: '#93c5fd', accent: '#2563eb' } },
-  { id: 'cyan', bg: '#164e63', accent: '#06b6d4', light: { bg: '#67e8f9', accent: '#0891b2' } },
-  { id: 'green', bg: '#14532d', accent: '#22c55e', light: { bg: '#86efac', accent: '#16a34a' } },
-  { id: 'yellow', bg: '#422006', accent: '#eab308', light: { bg: '#fde047', accent: '#ca8a04' } },
-  { id: 'orange', bg: '#431407', accent: '#f97316', light: { bg: '#fdba74', accent: '#ea580c' } },
-  { id: 'pink', bg: '#500724', accent: '#ec4899', light: { bg: '#f9a8d4', accent: '#db2777' } },
-  { id: 'rose', bg: '#4c0519', accent: '#f43f5e', light: { bg: '#fda4af', accent: '#e11d48' } },
+  { id: 'purple', bg: '#2d1b4e', accent: '#b026ff', light: { bg: '#f3e8ff', accent: '#a855f7' } },
+  { id: 'blue', bg: '#1e3a5f', accent: '#3b82f6', light: { bg: '#dbeafe', accent: '#3b82f6' } },
+  { id: 'cyan', bg: '#164e63', accent: '#00f5ff', light: { bg: '#cffafe', accent: '#06b6d4' } },
+  { id: 'green', bg: '#14532d', accent: '#39ff14', light: { bg: '#dcfce7', accent: '#22c55e' } },
+  { id: 'yellow', bg: '#422006', accent: '#ffff00', light: { bg: '#fef9c3', accent: '#eab308' } },
+  { id: 'orange', bg: '#431407', accent: '#ff6b00', light: { bg: '#ffedd5', accent: '#f97316' } },
+  { id: 'pink', bg: '#500724', accent: '#ff2d95', light: { bg: '#fce7f3', accent: '#ec4899' } },
+  { id: 'rose', bg: '#4c0519', accent: '#f43f5e', light: { bg: '#fee2e2', accent: '#f43f5e' } },
+  { id: 'teal', bg: '#0d3331', accent: '#14b8a6', light: { bg: '#ccfbf1', accent: '#14b8a6' } },
+  { id: 'indigo', bg: '#1e1b4b', accent: '#6366f1', light: { bg: '#e0e7ff', accent: '#6366f1' } },
+  { id: 'lime', bg: '#1a2e05', accent: '#84cc16', light: { bg: '#ecfccb', accent: '#84cc16' } },
+  { id: 'amber', bg: '#451a03', accent: '#f59e0b', light: { bg: '#fef3c7', accent: '#f59e0b' } },
+  { id: 'red', bg: '#450a0a', accent: '#ef4444', light: { bg: '#fee2e2', accent: '#ef4444' } },
+  { id: 'violet', bg: '#2e1065', accent: '#8b5cf6', light: { bg: '#ede9fe', accent: '#8b5cf6' } },
+  { id: 'emerald', bg: '#022c22', accent: '#10b981', light: { bg: '#d1fae5', accent: '#10b981' } },
+  { id: 'fuchsia', bg: '#4a044e', accent: '#d946ef', light: { bg: '#fae8ff', accent: '#d946ef' } },
 ];
+
+// Track used colors to avoid repetition
+let usedColors = new Set();
 
 const defaultSubs = [
   { name: 'Netflix', domain: 'netflix.com', price: 17.99, cycle: 'Monthly', color: 'rose' },
@@ -27,10 +39,26 @@ const defaultSubs = [
   { name: 'iCloud+', domain: 'icloud.com', price: 2.99, cycle: 'Monthly', color: 'blue' },
 ];
 
-const randColor = () => colors[Math.floor(Math.random() * colors.length)];
+function getUniqueColor() {
+  // Find colors not yet used
+  const available = colors.filter(c => !usedColors.has(c.id));
+  if (available.length === 0) {
+    // All used, reset and pick random
+    usedColors.clear();
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+  const color = available[Math.floor(Math.random() * available.length)];
+  usedColors.add(color.id);
+  return color;
+}
+
+function updateUsedColors() {
+  usedColors.clear();
+  subs.forEach(s => usedColors.add(s.color));
+}
 
 function getColor(colorId) {
-  const c = colors.find(x => x.id === colorId) || randColor();
+  const c = colors.find(x => x.id === colorId) || colors[0];
   return isDark ? { bg: c.bg, accent: c.accent } : c.light;
 }
 
@@ -52,26 +80,31 @@ function toMonthly(sub) {
   return sub.price;
 }
 
-function iconHtml(sub, className) {
+function iconHtml(sub, className, withContainer = false) {
   if (!sub.url) {
     return '<span class="iconify ' + className + ' text-gray-400" data-icon="ph:cube-bold"></span>';
   }
   const domain = sub.url.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
   const logoUrl = 'https://img.logo.dev/' + domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
-  return '<img src="' + logoUrl + '" class="' + className + ' object-contain rounded-lg" crossorigin="anonymous">';
+  const img = '<img src="' + logoUrl + '" class="' + className + ' object-contain rounded" crossorigin="anonymous">';
+  if (withContainer) {
+    return '<div class="logo-container">' + img + '</div>';
+  }
+  return img;
 }
 
 function getMonthlyTotal() {
   return subs.reduce((sum, sub) => sum + toMonthly(sub), 0);
 }
 
-// ===== Search with Enter key support =====
+// ===== Search - Enter adds directly if preset match =====
 function openSearchDropdown() {
   const dropdown = document.getElementById('search-dropdown');
-  if (dropdown) {
+  const input = document.getElementById('main-search');
+  if (dropdown && input) {
     dropdown.classList.remove('hidden');
     selectedSearchIndex = 0;
-    renderSearchResults(document.getElementById('main-search').value);
+    renderSearchResults(input.value);
   }
 }
 
@@ -83,12 +116,25 @@ function closeSearchDropdown() {
 
 function handleSearchInput(query) {
   selectedSearchIndex = 0;
-  renderSearchResults(query);
+  const dropdown = document.getElementById('search-dropdown');
+  if (dropdown) {
+    dropdown.classList.remove('hidden');
+    renderSearchResults(query);
+  }
 }
 
 function handleSearchKeydown(e) {
+  // Don't handle if modal is open
+  if (modalOpen) return;
+  
   const dropdown = document.getElementById('search-dropdown');
-  if (!dropdown || dropdown.classList.contains('hidden')) return;
+  
+  if (!dropdown || dropdown.classList.contains('hidden')) {
+    if (e.key !== 'Escape' && e.key !== 'Tab') {
+      openSearchDropdown();
+    }
+    return;
+  }
 
   if (e.key === 'ArrowDown') {
     e.preventDefault();
@@ -100,11 +146,14 @@ function handleSearchKeydown(e) {
     updateSearchHighlight();
   } else if (e.key === 'Enter') {
     e.preventDefault();
+    e.stopPropagation();
     if (searchResults.length > 0 && searchResults[selectedSearchIndex]) {
       const item = searchResults[selectedSearchIndex];
       if (item.type === 'preset') {
+        // Add preset directly
         quickAddPreset(item.idx);
       } else if (item.type === 'custom') {
+        // Open modal for custom, focus on price
         addCustomFromSearch(item.name);
       }
     }
@@ -118,10 +167,10 @@ function updateSearchHighlight() {
   const buttons = document.querySelectorAll('#search-dropdown .search-item');
   buttons.forEach((btn, i) => {
     if (i === selectedSearchIndex) {
-      btn.classList.add('bg-neon-cyan/20', 'border-l-2', 'border-l-neon-cyan');
+      btn.classList.add('search-selected');
       btn.classList.remove('hover:bg-retro-border');
     } else {
-      btn.classList.remove('bg-neon-cyan/20', 'border-l-2', 'border-l-neon-cyan');
+      btn.classList.remove('search-selected');
       btn.classList.add('hover:bg-retro-border');
     }
   });
@@ -145,7 +194,7 @@ function renderSearchResults(query) {
   searchResults = [];
   let html = '';
 
-  // First: matching presets (first one will be highlighted for Enter)
+  // Group by category
   const byCategory = {};
   for (const p of filtered) {
     if (!byCategory[p.category]) byCategory[p.category] = [];
@@ -153,14 +202,14 @@ function renderSearchResults(query) {
   }
 
   for (const cat of Object.keys(byCategory)) {
-    html += '<div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-gray-500 bg-retro-darker">' + cat + '</div>';
+    html += '<div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-gray-400 bg-black/30">' + cat + '</div>';
     for (const p of byCategory[cat]) {
       const idx = presets.indexOf(p);
       const logo = 'https://img.logo.dev/' + p.domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
       const isSelected = searchResults.length === selectedSearchIndex;
       searchResults.push({ type: 'preset', idx });
-      html += '<button onclick="quickAddPreset(' + idx + ')" class="search-item flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ' + (isSelected ? 'bg-neon-cyan/20 border-l-2 border-l-neon-cyan' : 'hover:bg-retro-border') + '">';
-      html += '<img src="' + logo + '" class="h-7 w-7 rounded-lg object-contain">';
+      html += '<button onclick="quickAddPreset(' + idx + ')" class="search-item flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
+      html += '<div class="logo-container"><img src="' + logo + '" class="h-6 w-6 rounded object-contain"></div>';
       html += '<div class="flex-1 font-semibold text-white text-sm">' + p.name + '</div>';
       html += '<div class="text-xs font-mono text-gray-400">$' + p.price + '</div></button>';
     }
@@ -170,14 +219,18 @@ function renderSearchResults(query) {
   if (q.length > 0) {
     searchResults.push({ type: 'custom', name: q });
     const isSelected = searchResults.length - 1 === selectedSearchIndex;
-    html += '<div class="border-t border-retro-border">';
-    html += '<button onclick="addCustomFromSearch(\'' + q.replace(/'/g, "\\'") + '\')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'bg-neon-cyan/20 border-l-2 border-l-neon-cyan' : 'hover:bg-retro-border') + '">';
-    html += '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-700 text-gray-400">';
-    html += '<span class="iconify h-4 w-4" data-icon="ph:plus-bold"></span></div>';
-    html += '<div class="flex-1"><div class="font-semibold text-gray-300 text-sm">Add "' + q + '" manually</div></div></button></div>';
+    html += '<div class="border-t border-white/10">';
+    html += '<button onclick="addCustomFromSearch(\'' + q.replace(/'/g, "\\'") + '\')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
+    html += '<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-neon-cyan/20 text-neon-cyan">';
+    html += '<span class="iconify h-3 w-3" data-icon="ph:plus-bold"></span></div>';
+    html += '<div class="flex-1"><div class="font-semibold text-neon-cyan text-sm">Add "' + q + '" manually</div></div></button></div>';
   }
 
-  dropdown.innerHTML = html || '<div class="p-4 text-center text-gray-500 text-sm">Type to search...</div>';
+  if (html === '') {
+    html = '<div class="p-4 text-center text-gray-500 text-sm font-mono">No results found</div>';
+  }
+
+  dropdown.innerHTML = html;
 }
 
 function quickAddPreset(idx) {
@@ -186,18 +239,22 @@ function quickAddPreset(idx) {
   
   playSound('add');
   
+  const color = getUniqueColor();
+  
   subs.push({
     id: Date.now().toString(),
     name: preset.name,
     price: preset.price,
     cycle: preset.cycle,
     url: preset.domain,
-    color: preset.color,
+    color: color.id,
     date: new Date().toISOString().split('T')[0]
   });
+  
   save();
   closeSearchDropdown();
   document.getElementById('main-search').value = '';
+  document.getElementById('main-search').focus();
 }
 
 function addCustomFromSearch(name) {
@@ -216,9 +273,14 @@ function openModalWithName(name) {
   document.getElementById('cycle').value = 'Monthly';
   document.getElementById('url').value = '';
   updateFavicon('');
-  pickColor(randColor().id);
+  pickColor(getUniqueColor().id);
   document.getElementById('modal-title').innerText = 'Add Subscription';
   showModal();
+  // Focus on price field after modal opens
+  setTimeout(() => {
+    const priceInput = document.getElementById('price');
+    if (priceInput) priceInput.focus();
+  }, 100);
 }
 
 // ===== Subscription List =====
@@ -238,19 +300,21 @@ function renderList() {
   let html = '';
   for (const sub of subs) {
     const color = getColor(sub.color);
-    html += '<div class="sub-item flex items-center gap-2 p-2 bg-retro-darker rounded-lg group">';
-    html += '<div class="w-0.5 h-6 rounded-full" style="background:' + color.accent + '"></div>';
-    html += iconHtml(sub, 'w-6 h-6');
+    html += '<div class="sub-item flex items-center gap-2 p-2 bg-retro-darker rounded-lg">';
+    html += '<div class="w-1 h-7 rounded-full" style="background:' + color.accent + '"></div>';
+    html += iconHtml(sub, 'w-7 h-7', true);
     html += '<div class="flex-1 min-w-0">';
-    html += '<div class="font-semibold text-white text-xs truncate">' + sub.name + '</div>';
-    html += '<div class="flex items-center text-[10px] font-mono text-gray-500">';
-    html += '$<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-10 bg-transparent border-0 p-0 text-[10px] font-mono text-gray-500 focus:ring-0 focus:text-neon-cyan"/>';
-    html += '/' + sub.cycle.toLowerCase().slice(0, 2);
+    html += '<div class="font-semibold text-white text-sm truncate">' + sub.name + '</div>';
+    html += '<div class="flex items-baseline gap-0 text-xs font-mono">';
+    html += '<span class="text-gray-400">$</span>';
+    html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-12 bg-transparent border-0 p-0 text-sm font-bold text-gray-300 focus:ring-0 focus:text-neon-cyan"/>';
+    html += '<span class="text-gray-500 text-[10px]">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span>';
     html += '</div></div>';
-    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-neon-pink p-1 transition-all">';
-    html += '<span class="iconify h-3 w-3" data-icon="ph:x-bold"></span></button></div>';
+    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="delete-btn text-gray-600 hover:text-neon-pink p-1.5 rounded transition-colors">';
+    html += '<span class="iconify h-4 w-4" data-icon="ph:x-bold"></span></button></div>';
   }
   listContainer.innerHTML = html;
+  updateUsedColors();
 }
 
 function updateSubPrice(id, val) {
@@ -268,6 +332,7 @@ function clearAllSubs() {
   if (!confirm('Remove all subscriptions?')) return;
   playSound('remove');
   subs = [];
+  usedColors.clear();
   save();
 }
 
@@ -277,7 +342,7 @@ function initColorPicker() {
   if (!container) return;
   let html = '';
   for (const c of colors) {
-    html += '<div onclick="pickColor(\'' + c.id + '\')" class="color-option cursor-pointer rounded h-6 border-2 border-transparent transition-all hover:scale-110" data-val="' + c.id + '" style="background:linear-gradient(135deg,' + c.bg + ',' + c.accent + ')"></div>';
+    html += '<div onclick="pickColor(\'' + c.id + '\')" class="color-option cursor-pointer rounded h-5 border-2 border-transparent transition-all hover:scale-110" data-val="' + c.id + '" style="background:linear-gradient(135deg,' + c.bg + ',' + c.accent + ')"></div>';
   }
   container.innerHTML = html;
 }
@@ -310,6 +375,8 @@ function updateFavicon(urlInput) {
 
 function handleFormSubmit(evt) {
   evt.preventDefault();
+  evt.stopPropagation();
+  
   const existingId = document.getElementById('entry-id').value;
   const subData = {
     id: existingId || Date.now().toString(),
@@ -317,7 +384,7 @@ function handleFormSubmit(evt) {
     price: parseFloat(document.getElementById('price').value) || 0,
     cycle: document.getElementById('cycle').value,
     url: document.getElementById('url').value,
-    color: document.getElementById('selected-color').value || randColor().id,
+    color: document.getElementById('selected-color').value || getUniqueColor().id,
     date: document.getElementById('date').value || ''
   };
 
@@ -332,7 +399,7 @@ function handleFormSubmit(evt) {
   hideModal();
 }
 
-// ===== Income & Work Time =====
+// ===== Income & Work Time (YEARLY) =====
 function handleIncomeChange() {
   const amountInput = document.getElementById('income-amount');
   const unitSelect = document.getElementById('income-unit');
@@ -354,12 +421,14 @@ function getHourlyRate() {
   }
 }
 
+// Calculate YEARLY work time
 function formatWorkTime(monthlyTotal) {
   const { amount, unit } = incomeState;
   if (amount <= 0) return '—';
 
+  const yearlyTotal = monthlyTotal * 12;
   const hourlyRate = getHourlyRate();
-  const totalHours = monthlyTotal / hourlyRate;
+  const totalHours = yearlyTotal / hourlyRate;
 
   switch (unit) {
     case 'hourly':
@@ -368,13 +437,15 @@ function formatWorkTime(monthlyTotal) {
       const m = Math.round((totalHours - h) * 60);
       return h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
     case 'daily':
-      const days = totalHours / 8;
-      return days < 1 ? Math.round(days * 8) + 'h' : days.toFixed(1) + 'd';
+      const daysD = totalHours / 8;
+      return daysD < 1 ? Math.round(daysD * 8) + 'h' : daysD.toFixed(1) + 'd';
     case 'weekly':
       const weeks = totalHours / 40;
-      return weeks < 1 ? Math.round(weeks * 5) + 'd' : weeks.toFixed(1) + 'w';
+      const daysW = totalHours / 8;
+      return weeks < 1 ? daysW.toFixed(1) + 'd' : weeks.toFixed(1) + 'w';
     case 'monthly':
-      return ((monthlyTotal / amount) * 100).toFixed(1) + '%';
+      const yearlyIncome = amount * 12;
+      return ((yearlyTotal / yearlyIncome) * 100).toFixed(1) + '%';
     default: return '—';
   }
 }
@@ -393,7 +464,7 @@ function renderTotals() {
   updateTotals(getMonthlyTotal());
 }
 
-// ===== Treemap Grid with Animation =====
+// ===== Treemap Grid =====
 function renderGrid() {
   const gridEl = document.getElementById('bento-grid');
   if (!gridEl) return;
@@ -461,7 +532,6 @@ function renderGrid() {
       content += '</div><div class="mt-auto min-w-0"><div class="font-bold text-white truncate" style="font-size:' + titleFont + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + priceFont + 'px">' + priceLabel + '</div></div>';
     }
 
-    // Add animation delay for staggered entrance
     const delay = i * 50;
     html += '<div class="treemap-cell tile-enter" style="left:' + cell.x + 'px;top:' + cell.y + 'px;width:' + cell.w + 'px;height:' + cell.h + 'px;border-radius:' + borderRadius + 'px;animation-delay:' + delay + 'ms">';
     html += '<div class="treemap-cell-inner" style="background:linear-gradient(135deg,' + color.bg + ',' + color.accent + ');padding:' + padding + 'px;border-radius:' + Math.max(4, borderRadius - 2) + 'px">' + content + '</div></div>';
@@ -478,7 +548,6 @@ function toggleTheme() {
   document.documentElement.classList.toggle('dark', isDark);
   localStorage.setItem('submap_theme', isDark ? 'dark' : 'light');
   
-  // Update theme button icon
   const btn = document.getElementById('theme-btn');
   if (btn) {
     const icon = btn.querySelector('.iconify');
@@ -514,6 +583,7 @@ function initDefaults() {
     }
     save();
   }
+  updateUsedColors();
 }
 
 function syncIncomeInputs() {
@@ -525,7 +595,21 @@ function syncIncomeInputs() {
 
 document.addEventListener('click', e => {
   const container = document.getElementById('search-container');
-  if (container && !container.contains(e.target)) closeSearchDropdown();
+  if (container && !container.contains(e.target)) {
+    closeSearchDropdown();
+  }
+});
+
+// Prevent Enter from bubbling when modal is open
+document.addEventListener('keydown', e => {
+  if (modalOpen && e.key === 'Enter') {
+    const activeEl = document.activeElement;
+    const isInForm = activeEl && activeEl.closest('#sub-form');
+    if (!isInForm) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -542,4 +626,3 @@ document.addEventListener('DOMContentLoaded', () => {
   const dateInput = document.getElementById('date');
   if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 });
-
