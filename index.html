@@ -41,14 +41,14 @@
     </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="h-screen overflow-hidden bg-retro-dark font-sans text-white selection:bg-neon-cyan/30">
+  <body class="min-h-screen bg-retro-dark font-sans text-white selection:bg-neon-cyan/30">
     <!-- Retro overlays -->
     <div class="scan-lines"></div>
     <div class="retro-grid"></div>
     
-    <div class="h-screen flex flex-col p-4 lg:p-6">
+    <div class="min-h-screen flex flex-col p-4 lg:p-6">
       <!-- Header -->
-      <header class="flex items-center justify-between mb-4 lg:mb-6">
+      <header class="flex items-center justify-between mb-4 lg:mb-6 shrink-0">
         <div>
           <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">
             <span class="text-neon-cyan">Sub</span><span class="text-neon-pink">Map</span>
@@ -59,12 +59,12 @@
           <span class="iconify h-4 w-4" data-icon="ph:moon-bold"></span>
           <span class="hidden sm:inline">theme</span>
         </button>
-    </header>
+      </header>
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
+      <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6">
         <!-- Left Panel -->
-        <section class="flex flex-col gap-4 lg:w-[360px] lg:shrink-0 min-h-0">
+        <section class="flex flex-col gap-4 lg:w-[360px] lg:shrink-0">
           <!-- Search Bar -->
           <div class="relative" id="search-container">
             <span class="iconify absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 pointer-events-none" data-icon="ph:magnifying-glass"></span>
@@ -80,19 +80,19 @@
               class="w-full rounded-xl border border-retro-border bg-retro-card py-3 pl-10 pr-4 text-sm font-medium text-white placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan/50 transition-all"
             />
             <div id="search-dropdown" class="absolute left-0 right-0 top-full z-40 mt-2 hidden max-h-[40vh] overflow-y-auto rounded-xl shadow-2xl"></div>
-        </div>
+          </div>
 
           <!-- Subscriptions List -->
-          <div class="flex-1 min-h-0 rounded-xl border border-retro-border bg-retro-card overflow-hidden flex flex-col">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-retro-border">
+          <div class="rounded-xl border border-retro-border bg-retro-card overflow-hidden flex flex-col" style="min-height: 200px; max-height: 50vh;">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-retro-border shrink-0">
               <span class="text-xs font-mono text-gray-500 uppercase tracking-wider">Subscriptions</span>
               <button onclick="clearAllSubs()" id="clear-btn" class="hidden text-xs font-mono text-gray-500 hover:text-neon-pink transition-colors">clear</button>
             </div>
             <div id="sub-list-container" class="flex-1 overflow-y-auto p-2 space-y-1.5"></div>
-      </div>
+          </div>
 
           <!-- Income Section -->
-          <div class="rounded-xl border border-retro-border bg-retro-card p-4">
+          <div class="rounded-xl border border-retro-border bg-retro-card p-4 shrink-0">
             <div class="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">Your Income</div>
             <div class="flex gap-2">
               <input
@@ -118,9 +118,9 @@
         </section>
 
         <!-- Right Panel - Map -->
-        <section class="flex-1 min-h-0 rounded-xl border border-retro-border bg-retro-card p-4 lg:p-5 flex flex-col">
+        <section class="flex-1 rounded-xl border border-retro-border bg-retro-card p-4 lg:p-5 flex flex-col" style="min-height: 400px;">
           <!-- Stats Row -->
-          <div class="grid grid-cols-3 gap-4 mb-4">
+          <div class="grid grid-cols-3 gap-4 mb-4 shrink-0">
             <div class="text-center">
               <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Monthly</div>
               <div class="text-xl lg:text-2xl font-black text-white font-mono" id="step-2-total">$0</div>
@@ -139,7 +139,7 @@
           <div id="bento-grid" class="treemap-container flex-1 rounded-xl"></div>
         </section>
       </main>
-        </div>
+    </div>
 
     <!-- Modal -->
     <div id="modal-backdrop" class="fixed inset-0 z-50 hidden bg-black/70 opacity-0 backdrop-blur-sm transition-opacity duration-300"></div>
@@ -155,10 +155,10 @@
         <form id="sub-form" onsubmit="handleFormSubmit(event)" class="space-y-4 overflow-y-auto p-4">
           <input type="hidden" id="entry-id" />
 
-            <div class="flex gap-3">
-            <div id="favicon-preview" class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-retro-border bg-retro-darker">
-              <span class="iconify h-5 w-5 text-gray-600" data-icon="ph:globe-simple"></span>
-              </div>
+          <div class="flex gap-3">
+            <div id="favicon-preview" class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-retro-border bg-retro-darker">
+              <span class="iconify h-6 w-6 text-gray-600" data-icon="ph:globe-simple"></span>
+            </div>
             <div class="flex-1 space-y-2">
               <input type="text" id="name" required placeholder="Service name" class="block w-full rounded-lg border border-retro-border bg-retro-darker px-3 py-2 text-sm font-semibold text-white placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none" />
               <input type="text" id="url" placeholder="website.com" oninput="updateFavicon(this.value)" class="block w-full rounded-lg border border-retro-border bg-retro-darker px-3 py-1.5 text-xs text-gray-300 placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none" />
@@ -173,11 +173,11 @@
             <div>
               <label class="mb-1 block text-[10px] font-mono text-gray-500 uppercase">Cycle</label>
               <select id="cycle" class="block w-full rounded-lg border border-retro-border bg-retro-darker px-3 py-2 text-sm font-semibold text-white focus:border-neon-cyan focus:outline-none appearance-none">
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-              <option value="Weekly">Weekly</option>
-            </select>
-          </div>
+                <option value="Monthly">Monthly</option>
+                <option value="Yearly">Yearly</option>
+                <option value="Weekly">Weekly</option>
+              </select>
+            </div>
           </div>
 
           <div>

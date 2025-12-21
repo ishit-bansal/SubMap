@@ -110,10 +110,6 @@ function closeSearchDropdown() {
   selectedSearchIndex = 0;
 }
 
-function handleSearchFocus() {
-  openSearchDropdown();
-}
-
 function handleSearchInput(query) {
   selectedSearchIndex = 0;
   const dropdown = document.getElementById('search-dropdown');
@@ -205,8 +201,9 @@ function renderSearchResults(query) {
       const logo = 'https://img.logo.dev/' + p.domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
       const isSelected = searchResults.length === selectedSearchIndex;
       searchResults.push({ type: 'preset', idx });
-      html += '<button onclick="quickAddPreset(' + idx + ')" class="search-item flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
-      html += '<div class="logo-container"><img src="' + logo + '" class="h-6 w-6 rounded object-contain"></div>';
+      // Bigger icons in search: h-8 w-8
+      html += '<button onclick="quickAddPreset(' + idx + ')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
+      html += '<div class="logo-container"><img src="' + logo + '" class="h-8 w-8 rounded object-contain"></div>';
       html += '<div class="flex-1 font-semibold text-white text-sm">' + p.name + '</div>';
       html += '<div class="text-xs font-mono text-gray-400">$' + p.price + '</div></button>';
     }
@@ -217,8 +214,8 @@ function renderSearchResults(query) {
     const isSelected = searchResults.length - 1 === selectedSearchIndex;
     html += '<div class="border-t border-white/10">';
     html += '<button onclick="addCustomFromSearch(\'' + q.replace(/'/g, "\\'") + '\')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
-    html += '<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-neon-cyan/20 text-neon-cyan">';
-    html += '<span class="iconify h-3 w-3" data-icon="ph:plus-bold"></span></div>';
+    html += '<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neon-cyan/20 text-neon-cyan">';
+    html += '<span class="iconify h-4 w-4" data-icon="ph:plus-bold"></span></div>';
     html += '<div class="flex-1"><div class="font-semibold text-neon-cyan text-sm">Add "' + q + '" manually</div></div></button></div>';
   }
 
@@ -249,7 +246,6 @@ function quickAddPreset(idx) {
   closeSearchDropdown();
   const searchInput = document.getElementById('main-search');
   searchInput.value = '';
-  // Keep focus but allow dropdown to reopen on next interaction
   searchInput.focus();
 }
 
@@ -278,7 +274,7 @@ function openModalWithName(name) {
   }, 100);
 }
 
-// ===== Subscription List =====
+// ===== Subscription List with JS-based hover for Safari =====
 function renderList() {
   const listContainer = document.getElementById('sub-list-container');
   const clearBtn = document.getElementById('clear-btn');
@@ -295,14 +291,15 @@ function renderList() {
   let html = '';
   for (const sub of subs) {
     const color = getColor(sub.color);
-    html += '<div class="sub-item flex items-center gap-2 p-2 bg-retro-darker rounded-lg">';
-    html += '<div class="w-1 h-7 rounded-full" style="background:' + color.accent + '"></div>';
-    html += iconHtml(sub, 'w-7 h-7', true);
+    // Bigger icons: w-9 h-9
+    html += '<div class="sub-item flex items-center gap-3 p-2.5 bg-retro-darker rounded-lg" data-id="' + sub.id + '">';
+    html += '<div class="w-1 h-8 rounded-full" style="background:' + color.accent + '"></div>';
+    html += iconHtml(sub, 'w-9 h-9', true);
     html += '<div class="flex-1 min-w-0">';
     html += '<div class="font-semibold text-white text-sm truncate">' + sub.name + '</div>';
     html += '<div class="flex items-baseline gap-0 text-xs font-mono">';
     html += '<span class="text-gray-400">$</span>';
-    html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-12 bg-transparent border-0 p-0 text-sm font-bold text-gray-300 focus:ring-0 focus:text-neon-cyan"/>';
+    html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-14 bg-transparent border-0 p-0 text-sm font-bold text-gray-300 focus:ring-0 focus:text-neon-cyan"/>';
     html += '<span class="text-gray-500 text-[10px]">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span>';
     html += '</div></div>';
     html += '<button onclick="removeSub(\'' + sub.id + '\')" class="delete-btn text-gray-600 hover:text-neon-pink p-1.5 rounded transition-colors">';
@@ -310,6 +307,28 @@ function renderList() {
   }
   listContainer.innerHTML = html;
   updateUsedColors();
+  
+  // Attach JS-based hover listeners for Safari compatibility
+  attachHoverListeners();
+}
+
+function attachHoverListeners() {
+  const items = document.querySelectorAll('.sub-item');
+  items.forEach(item => {
+    const btn = item.querySelector('.delete-btn');
+    if (!btn) return;
+    
+    item.addEventListener('mouseenter', () => {
+      btn.classList.add('visible');
+    });
+    item.addEventListener('mouseleave', () => {
+      btn.classList.remove('visible');
+    });
+    // Touch support
+    item.addEventListener('touchstart', () => {
+      btn.classList.add('visible');
+    }, { passive: true });
+  });
 }
 
 function updateSubPrice(id, val) {
@@ -357,7 +376,7 @@ function updateFavicon(urlInput) {
     const preview = document.getElementById('favicon-preview');
     if (!preview) return;
     if (!urlInput) {
-      preview.innerHTML = '<span class="iconify text-gray-600 h-5 w-5" data-icon="ph:globe-simple"></span>';
+      preview.innerHTML = '<span class="iconify text-gray-600 h-6 w-6" data-icon="ph:globe-simple"></span>';
       return;
     }
     const domain = urlInput.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
@@ -458,7 +477,7 @@ function renderTotals() {
   updateTotals(getMonthlyTotal());
 }
 
-// ===== Treemap Grid =====
+// ===== Treemap Grid with bigger icons and names =====
 function renderGrid() {
   const gridEl = document.getElementById('bento-grid');
   if (!gridEl) return;
@@ -502,23 +521,24 @@ function renderGrid() {
     const innerW = cell.w - padding * 2;
     const innerH = cell.h - padding * 2;
 
-    const priceFont = Math.max(10, Math.min(12 + (clampedPct / 60) * 32, Math.min(innerW * 0.18, innerH * 0.3), 42));
-    const titleFont = Math.max(8, Math.min(9 + (clampedPct / 60) * 12, priceFont * 0.55, 20));
-    const iconSize = Math.max(14, Math.min(16 + (clampedPct / 60) * 28, innerH * 0.3, innerW * 0.35, 44));
+    // Increased sizes for icons and titles
+    const priceFont = Math.max(12, Math.min(14 + (clampedPct / 60) * 36, Math.min(innerW * 0.2, innerH * 0.32), 48));
+    const titleFont = Math.max(10, Math.min(11 + (clampedPct / 60) * 14, priceFont * 0.6, 24));
+    const iconSize = Math.max(18, Math.min(20 + (clampedPct / 60) * 32, innerH * 0.35, innerW * 0.4, 52));
 
     const isMicro = minDim < 40, isTiny = minDim < 55, isSmall = minDim < 80;
     let content = '';
     const priceLabel = formatShort(cell.cost);
 
     if (isMicro) {
-      const sz = Math.max(10, Math.min(iconSize, minDim * 0.5));
+      const sz = Math.max(14, Math.min(iconSize, minDim * 0.55));
       content = '<div class="flex items-center justify-center h-full">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '</div>';
     } else if (isTiny) {
-      const sz = Math.max(12, Math.min(iconSize, minDim * 0.4));
-      content = '<div class="flex flex-col items-center justify-center h-full gap-0.5">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-bold text-white font-mono" style="font-size:' + Math.min(priceFont, 12) + 'px">' + priceLabel + '</div></div>';
+      const sz = Math.max(16, Math.min(iconSize, minDim * 0.45));
+      content = '<div class="flex flex-col items-center justify-center h-full gap-0.5">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-bold text-white font-mono" style="font-size:' + Math.min(priceFont, 13) + 'px">' + priceLabel + '</div></div>';
     } else if (isSmall) {
-      const sz = Math.max(14, Math.min(iconSize, innerW * 0.35, innerH * 0.28));
-      content = '<div class="flex flex-col items-center justify-center h-full gap-0.5 text-center">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-semibold text-white truncate w-full px-1" style="font-size:' + Math.min(titleFont, 11) + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + Math.min(priceFont, 16) + 'px">' + priceLabel + '</div></div>';
+      const sz = Math.max(18, Math.min(iconSize, innerW * 0.4, innerH * 0.32));
+      content = '<div class="flex flex-col items-center justify-center h-full gap-0.5 text-center">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-semibold text-white truncate w-full px-1" style="font-size:' + Math.min(titleFont, 12) + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + Math.min(priceFont, 18) + 'px">' + priceLabel + '</div></div>';
     } else {
       const showBadge = cell.w > 80 && cell.h > 65;
       content = '<div class="flex justify-between items-start">' + iconHtml(cell, 'w-[' + iconSize + 'px] h-[' + iconSize + 'px]');
@@ -554,7 +574,6 @@ function toggleTheme() {
 
 function loadTheme() {
   const saved = localStorage.getItem('submap_theme');
-  // Default to dark theme
   isDark = saved !== 'light';
   document.documentElement.classList.toggle('dark', isDark);
   

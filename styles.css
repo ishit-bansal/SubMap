@@ -120,14 +120,14 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 #sub-list-container::-webkit-scrollbar-track { background: rgba(30, 30, 46, 0.5); border-radius: 10px; }
 #sub-list-container::-webkit-scrollbar-thumb { background-color: #4a4a6a; border-radius: 10px; }
 
-/* DELETE BUTTON - Hidden by default, visible on hover (dark theme) */
-.dark .sub-item .delete-btn {
+/* DELETE BUTTON - Hidden by default (JS controls visibility) */
+.sub-item .delete-btn {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
 }
 
-.dark .sub-item:hover .delete-btn {
+.sub-item .delete-btn.visible {
   opacity: 1;
   pointer-events: auto;
 }
@@ -135,8 +135,8 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 /* Logo container */
 .logo-container {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 2px;
+  border-radius: 8px;
+  padding: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -223,18 +223,6 @@ html:not(.dark) .sub-item {
 
 html:not(.dark) .sub-item:hover {
   background: #f8fafc;
-}
-
-/* DELETE BUTTON - Light theme */
-html:not(.dark) .sub-item .delete-btn {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-html:not(.dark) .sub-item:hover .delete-btn {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 /* Light mode logo container */
