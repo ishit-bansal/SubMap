@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SubMap – Subscription Cost Visualizer</title>
-    <meta name="description" content="See how much time you work to pay for your subscriptions." />
+    <meta name="description" content="Visualize how much time you work to pay for your subscriptions." />
+    <meta name="keywords" content="subscription tracker, cost visualizer, budget, subscriptions, money management" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -22,30 +24,16 @@
                 pink: '#ff2d95',
                 cyan: '#00f5ff',
                 purple: '#b026ff',
-                green: '#39ff14',
-                yellow: '#ffff00',
-                orange: '#ff6b00',
               },
               retro: {
                 dark: '#0a0a0f',
                 darker: '#050508',
                 card: '#12121a',
                 border: '#1f1f2e',
-              },
-              pastel: {
-                pink: '#fce7f3',
-                purple: '#f3e8ff',
-                blue: '#dbeafe',
-                cyan: '#cffafe',
-                green: '#dcfce7',
-                yellow: '#fef9c3',
-                orange: '#ffedd5',
-                red: '#fee2e2',
               }
             },
             boxShadow: {
               neon: '0 0 20px rgba(0, 245, 255, 0.3)',
-              'neon-pink': '0 0 30px rgba(255, 45, 149, 0.4)',
             },
           },
         },
@@ -54,7 +42,7 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="h-screen overflow-hidden bg-retro-dark font-sans text-white selection:bg-neon-cyan/30">
-    <!-- Dark mode overlays -->
+    <!-- Retro overlays -->
     <div class="scan-lines"></div>
     <div class="retro-grid"></div>
     
@@ -84,16 +72,17 @@
               type="text"
               id="main-search"
               placeholder="Search subscriptions..."
+              onclick="openSearchDropdown()"
               onfocus="openSearchDropdown()"
               oninput="handleSearchInput(this.value)"
               onkeydown="handleSearchKeydown(event)"
               autocomplete="off"
               class="w-full rounded-xl border border-retro-border bg-retro-card py-3 pl-10 pr-4 text-sm font-medium text-white placeholder:text-gray-600 focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan/50 transition-all"
             />
-            <div id="search-dropdown" class="absolute left-0 right-0 top-full z-40 mt-2 hidden max-h-[40vh] overflow-y-auto rounded-xl border border-retro-border bg-retro-card shadow-2xl"></div>
+            <div id="search-dropdown" class="absolute left-0 right-0 top-full z-40 mt-2 hidden max-h-[40vh] overflow-y-auto rounded-xl shadow-2xl"></div>
         </div>
 
-          <!-- Subscriptions List (scrollable) -->
+          <!-- Subscriptions List -->
           <div class="flex-1 min-h-0 rounded-xl border border-retro-border bg-retro-card overflow-hidden flex flex-col">
             <div class="flex items-center justify-between px-4 py-3 border-b border-retro-border">
               <span class="text-xs font-mono text-gray-500 uppercase tracking-wider">Subscriptions</span>
@@ -130,7 +119,7 @@
 
         <!-- Right Panel - Map -->
         <section class="flex-1 min-h-0 rounded-xl border border-retro-border bg-retro-card p-4 lg:p-5 flex flex-col">
-          <!-- Stats Row - All same size, centered -->
+          <!-- Stats Row -->
           <div class="grid grid-cols-3 gap-4 mb-4">
             <div class="text-center">
               <div class="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Monthly</div>
@@ -204,14 +193,6 @@
         </form>
       </div>
     </div>
-
-    <!-- Audio elements for retro sounds -->
-    <audio id="sound-add" preload="auto">
-      <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1bYXt/gHJ0d3d6fH18fn6AgYF/fYCAf36AgIB+fn19fX1+fn5+f39+fn5+fn5+fn5+fn5+fn5+fn5+fn5+" type="audio/wav">
-    </audio>
-    <audio id="sound-remove" preload="auto">
-      <source src="data:audio/wav;base64,UklGRl9vT19teleUklGRl9vT19teleUklGRl9vT19tele" type="audio/wav">
-    </audio>
 
     <script src="js/presets.js"></script>
     <script src="js/storage.js"></script>

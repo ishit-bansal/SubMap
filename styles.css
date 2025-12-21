@@ -1,4 +1,4 @@
-/* === DARK THEME RETRO EFFECTS === */
+/* === RETRO EFFECTS === */
 .scan-lines {
   position: fixed;
   inset: 0;
@@ -38,7 +38,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
 .iconify { display: inline-block; vertical-align: middle; }
 
-/* === TREEMAP WITH CRT EFFECTS === */
+/* === TREEMAP === */
 .treemap-container {
   position: relative;
   width: 100%;
@@ -95,7 +95,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* === SEARCH DROPDOWN - Different bg to distinguish === */
+/* === SEARCH DROPDOWN === */
 #search-dropdown {
   background: linear-gradient(180deg, #0d0d14 0%, #0a0a10 100%);
   border: 1px solid rgba(0, 245, 255, 0.15);
@@ -105,33 +105,34 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 #search-dropdown::-webkit-scrollbar-track { background: rgba(30, 30, 46, 0.5); }
 #search-dropdown::-webkit-scrollbar-thumb { background-color: #4a4a6a; border-radius: 10px; }
 
-.search-item {
-  cursor: pointer;
-}
-
+.search-item { cursor: pointer; }
 .search-selected {
   background: rgba(0, 245, 255, 0.15);
   border-left: 3px solid #00f5ff;
 }
 
-/* Sub list scrollbar */
+/* Hide sub list scrollbar when search is open */
+.search-open #sub-list-container { overflow: hidden !important; }
+.search-open #sub-list-container::-webkit-scrollbar { display: none; }
+
+/* === SUBSCRIPTION LIST === */
 #sub-list-container::-webkit-scrollbar { width: 6px; }
 #sub-list-container::-webkit-scrollbar-track { background: rgba(30, 30, 46, 0.5); border-radius: 10px; }
 #sub-list-container::-webkit-scrollbar-thumb { background-color: #4a4a6a; border-radius: 10px; }
 
-/* === DELETE BUTTON - Only visible on hover === */
-.sub-item .delete-btn {
+/* DELETE BUTTON - Hidden by default, visible on hover (dark theme) */
+.dark .sub-item .delete-btn {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
 }
 
-.sub-item:hover .delete-btn {
+.dark .sub-item:hover .delete-btn {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* Logo container with background for visibility */
+/* Logo container */
 .logo-container {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 6px;
@@ -222,6 +223,18 @@ html:not(.dark) .sub-item {
 
 html:not(.dark) .sub-item:hover {
   background: #f8fafc;
+}
+
+/* DELETE BUTTON - Light theme */
+html:not(.dark) .sub-item .delete-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+html:not(.dark) .sub-item:hover .delete-btn {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Light mode logo container */

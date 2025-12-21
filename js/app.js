@@ -9,7 +9,7 @@ let selectedSearchIndex = 0;
 let searchResults = [];
 let modalOpen = false;
 
-// Extended color palette - more variety
+// Color palette
 const colors = [
   { id: 'purple', bg: '#2d1b4e', accent: '#b026ff', light: { bg: '#f3e8ff', accent: '#a855f7' } },
   { id: 'blue', bg: '#1e3a5f', accent: '#3b82f6', light: { bg: '#dbeafe', accent: '#3b82f6' } },
@@ -29,7 +29,6 @@ const colors = [
   { id: 'fuchsia', bg: '#4a044e', accent: '#d946ef', light: { bg: '#fae8ff', accent: '#d946ef' } },
 ];
 
-// Track used colors to avoid repetition
 let usedColors = new Set();
 
 const defaultSubs = [
@@ -40,10 +39,8 @@ const defaultSubs = [
 ];
 
 function getUniqueColor() {
-  // Find colors not yet used
   const available = colors.filter(c => !usedColors.has(c.id));
   if (available.length === 0) {
-    // All used, reset and pick random
     usedColors.clear();
     return colors[Math.floor(Math.random() * colors.length)];
   }
@@ -87,22 +84,20 @@ function iconHtml(sub, className, withContainer = false) {
   const domain = sub.url.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
   const logoUrl = 'https://img.logo.dev/' + domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
   const img = '<img src="' + logoUrl + '" class="' + className + ' object-contain rounded" crossorigin="anonymous">';
-  if (withContainer) {
-    return '<div class="logo-container">' + img + '</div>';
-  }
-  return img;
+  return withContainer ? '<div class="logo-container">' + img + '</div>' : img;
 }
 
 function getMonthlyTotal() {
   return subs.reduce((sum, sub) => sum + toMonthly(sub), 0);
 }
 
-// ===== Search - Enter adds directly if preset match =====
+// ===== Search =====
 function openSearchDropdown() {
   const dropdown = document.getElementById('search-dropdown');
   const input = document.getElementById('main-search');
   if (dropdown && input) {
     dropdown.classList.remove('hidden');
+    document.body.classList.add('search-open');
     selectedSearchIndex = 0;
     renderSearchResults(input.value);
   }
@@ -111,7 +106,12 @@ function openSearchDropdown() {
 function closeSearchDropdown() {
   const dropdown = document.getElementById('search-dropdown');
   if (dropdown) dropdown.classList.add('hidden');
+  document.body.classList.remove('search-open');
   selectedSearchIndex = 0;
+}
+
+function handleSearchFocus() {
+  openSearchDropdown();
 }
 
 function handleSearchInput(query) {
@@ -119,12 +119,12 @@ function handleSearchInput(query) {
   const dropdown = document.getElementById('search-dropdown');
   if (dropdown) {
     dropdown.classList.remove('hidden');
+    document.body.classList.add('search-open');
     renderSearchResults(query);
   }
 }
 
 function handleSearchKeydown(e) {
-  // Don't handle if modal is open
   if (modalOpen) return;
   
   const dropdown = document.getElementById('search-dropdown');
@@ -150,10 +150,8 @@ function handleSearchKeydown(e) {
     if (searchResults.length > 0 && searchResults[selectedSearchIndex]) {
       const item = searchResults[selectedSearchIndex];
       if (item.type === 'preset') {
-        // Add preset directly
         quickAddPreset(item.idx);
       } else if (item.type === 'custom') {
-        // Open modal for custom, focus on price
         addCustomFromSearch(item.name);
       }
     }
@@ -194,7 +192,6 @@ function renderSearchResults(query) {
   searchResults = [];
   let html = '';
 
-  // Group by category
   const byCategory = {};
   for (const p of filtered) {
     if (!byCategory[p.category]) byCategory[p.category] = [];
@@ -215,7 +212,6 @@ function renderSearchResults(query) {
     }
   }
 
-  // Custom add option at bottom
   if (q.length > 0) {
     searchResults.push({ type: 'custom', name: q });
     const isSelected = searchResults.length - 1 === selectedSearchIndex;
@@ -239,22 +235,22 @@ function quickAddPreset(idx) {
   
   playSound('add');
   
-  const color = getUniqueColor();
-  
   subs.push({
     id: Date.now().toString(),
     name: preset.name,
     price: preset.price,
     cycle: preset.cycle,
     url: preset.domain,
-    color: color.id,
+    color: getUniqueColor().id,
     date: new Date().toISOString().split('T')[0]
   });
   
   save();
   closeSearchDropdown();
-  document.getElementById('main-search').value = '';
-  document.getElementById('main-search').focus();
+  const searchInput = document.getElementById('main-search');
+  searchInput.value = '';
+  // Keep focus but allow dropdown to reopen on next interaction
+  searchInput.focus();
 }
 
 function addCustomFromSearch(name) {
@@ -276,7 +272,6 @@ function openModalWithName(name) {
   pickColor(getUniqueColor().id);
   document.getElementById('modal-title').innerText = 'Add Subscription';
   showModal();
-  // Focus on price field after modal opens
   setTimeout(() => {
     const priceInput = document.getElementById('price');
     if (priceInput) priceInput.focus();
@@ -399,7 +394,7 @@ function handleFormSubmit(evt) {
   hideModal();
 }
 
-// ===== Income & Work Time (YEARLY) =====
+// ===== Income & Work Time =====
 function handleIncomeChange() {
   const amountInput = document.getElementById('income-amount');
   const unitSelect = document.getElementById('income-unit');
@@ -421,7 +416,6 @@ function getHourlyRate() {
   }
 }
 
-// Calculate YEARLY work time
 function formatWorkTime(monthlyTotal) {
   const { amount, unit } = incomeState;
   if (amount <= 0) return '—';
@@ -541,7 +535,7 @@ function renderGrid() {
   updateTotals(monthlyTotal);
 }
 
-// ===== Theme Toggle =====
+// ===== Theme =====
 function toggleTheme() {
   playSound('theme');
   isDark = !isDark;
@@ -560,6 +554,7 @@ function toggleTheme() {
 
 function loadTheme() {
   const saved = localStorage.getItem('submap_theme');
+  // Default to dark theme
   isDark = saved !== 'light';
   document.documentElement.classList.toggle('dark', isDark);
   
@@ -600,7 +595,6 @@ document.addEventListener('click', e => {
   }
 });
 
-// Prevent Enter from bubbling when modal is open
 document.addEventListener('keydown', e => {
   if (modalOpen && e.key === 'Enter') {
     const activeEl = document.activeElement;
