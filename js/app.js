@@ -8,6 +8,7 @@ let isDark = true;
 let selectedSearchIndex = 0;
 let searchResults = [];
 let modalOpen = false;
+let resizeTimeout = null;
 
 // Color palette
 const colors = [
@@ -201,7 +202,6 @@ function renderSearchResults(query) {
       const logo = 'https://img.logo.dev/' + p.domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
       const isSelected = searchResults.length === selectedSearchIndex;
       searchResults.push({ type: 'preset', idx });
-      // Bigger icons in search: h-8 w-8
       html += '<button onclick="quickAddPreset(' + idx + ')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
       html += '<div class="logo-container"><img src="' + logo + '" class="h-8 w-8 rounded object-contain"></div>';
       html += '<div class="flex-1 font-semibold text-white text-sm">' + p.name + '</div>';
@@ -274,7 +274,7 @@ function openModalWithName(name) {
   }, 100);
 }
 
-// ===== Subscription List with JS-based hover for Safari =====
+// ===== Subscription List =====
 function renderList() {
   const listContainer = document.getElementById('sub-list-container');
   const clearBtn = document.getElementById('clear-btn');
@@ -291,7 +291,6 @@ function renderList() {
   let html = '';
   for (const sub of subs) {
     const color = getColor(sub.color);
-    // Bigger icons: w-9 h-9
     html += '<div class="sub-item flex items-center gap-3 p-2.5 bg-retro-darker rounded-lg" data-id="' + sub.id + '">';
     html += '<div class="w-1 h-8 rounded-full" style="background:' + color.accent + '"></div>';
     html += iconHtml(sub, 'w-9 h-9', true);
@@ -307,28 +306,6 @@ function renderList() {
   }
   listContainer.innerHTML = html;
   updateUsedColors();
-  
-  // Attach JS-based hover listeners for Safari compatibility
-  attachHoverListeners();
-}
-
-function attachHoverListeners() {
-  const items = document.querySelectorAll('.sub-item');
-  items.forEach(item => {
-    const btn = item.querySelector('.delete-btn');
-    if (!btn) return;
-    
-    item.addEventListener('mouseenter', () => {
-      btn.classList.add('visible');
-    });
-    item.addEventListener('mouseleave', () => {
-      btn.classList.remove('visible');
-    });
-    // Touch support
-    item.addEventListener('touchstart', () => {
-      btn.classList.add('visible');
-    }, { passive: true });
-  });
 }
 
 function updateSubPrice(id, val) {
@@ -477,7 +454,7 @@ function renderTotals() {
   updateTotals(getMonthlyTotal());
 }
 
-// ===== Treemap Grid with bigger icons and names =====
+// ===== Treemap Grid =====
 function renderGrid() {
   const gridEl = document.getElementById('bento-grid');
   if (!gridEl) return;
@@ -521,7 +498,6 @@ function renderGrid() {
     const innerW = cell.w - padding * 2;
     const innerH = cell.h - padding * 2;
 
-    // Increased sizes for icons and titles
     const priceFont = Math.max(12, Math.min(14 + (clampedPct / 60) * 36, Math.min(innerW * 0.2, innerH * 0.32), 48));
     const titleFont = Math.max(10, Math.min(11 + (clampedPct / 60) * 14, priceFont * 0.6, 24));
     const iconSize = Math.max(18, Math.min(20 + (clampedPct / 60) * 32, innerH * 0.35, innerW * 0.4, 52));
@@ -553,6 +529,14 @@ function renderGrid() {
 
   gridEl.innerHTML = html;
   updateTotals(monthlyTotal);
+}
+
+// Debounced resize handler
+function handleResize() {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    renderGrid();
+  }, 150);
 }
 
 // ===== Theme =====
@@ -607,6 +591,18 @@ function syncIncomeInputs() {
   if (unitSelect) unitSelect.value = incomeState.unit || 'hourly';
 }
 
+// Setup resize observer for the treemap container
+function setupResizeObserver() {
+  const gridEl = document.getElementById('bento-grid');
+  if (!gridEl) return;
+  
+  const resizeObserver = new ResizeObserver(() => {
+    handleResize();
+  });
+  
+  resizeObserver.observe(gridEl);
+}
+
 document.addEventListener('click', e => {
   const container = document.getElementById('search-container');
   if (container && !container.contains(e.target)) {
@@ -625,6 +621,9 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// Also handle window resize
+window.addEventListener('resize', handleResize);
+
 document.addEventListener('DOMContentLoaded', () => {
   loadTheme();
   incomeState = loadIncome();
@@ -635,6 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderList();
   requestAnimationFrame(() => requestAnimationFrame(renderGrid));
   renderTotals();
+  setupResizeObserver();
   
   const dateInput = document.getElementById('date');
   if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
