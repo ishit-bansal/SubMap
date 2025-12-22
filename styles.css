@@ -136,7 +136,7 @@ html:not(.dark) .treemap-container { background: #e8e8f0; }
 
 /* Light theme scanlines on tiles */
 html:not(.dark) .treemap-cell-inner::before {
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
 }
 
 html:not(.dark) .treemap-cell-inner { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
