@@ -4,7 +4,7 @@
 
 A sleek, retro-themed web app that helps you understand the true cost of your subscriptions by showing them as a proportional treemap visualization and calculating how many hours/days you work to afford them.
 
-![SubMap Preview](https://via.placeholder.com/800x450?text=SubMap+Preview)
+**[Live Site](https://ishit-bansal.github.io/SubMap/)**
 
 ## Features
 
