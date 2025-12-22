@@ -1,16 +1,12 @@
+/* SubMap - Subscription Cost Visualizer */
+
 /* === RETRO EFFECTS === */
 .scan-lines {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 1000;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
-  );
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
 }
 
 .retro-grid {
@@ -18,20 +14,17 @@
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  background-image: 
-    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
 }
 
-/* === SCROLLBAR === */
+/* === BASE STYLES === */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(30, 30, 46, 0.5); border-radius: 10px; }
+::-webkit-scrollbar-track { background: rgba(30,30,46,0.5); border-radius: 10px; }
 ::-webkit-scrollbar-thumb { background-color: #4a4a6a; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background-color: #6a6a8a; }
 
-/* Hide number spinners */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
@@ -52,14 +45,12 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   box-sizing: border-box;
   overflow: hidden;
   cursor: default;
-  /* Background same as container - no colored gap visible */
-  background: transparent;
 }
 .treemap-cell:hover { z-index: 50; }
 
 .treemap-cell-inner {
   position: absolute;
-  inset: 0; /* No gap - tile fills the cell completely */
+  inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -68,11 +59,10 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
 .treemap-cell:hover .treemap-cell-inner {
-  box-shadow: 0 0 20px rgba(0, 245, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0,245,255,0.15);
   transform: scale(1.02);
 }
 
-/* Tile entrance animation */
 .tile-enter {
   animation: tileGrow 0.3s ease-out forwards;
   opacity: 0;
@@ -84,25 +74,24 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* === SEARCH DROPDOWN === */
+/* === SEARCH === */
 #search-dropdown {
   background: linear-gradient(180deg, #0d0d14 0%, #0a0a10 100%);
-  border: 1px solid rgba(0, 245, 255, 0.15);
+  border: 1px solid rgba(0,245,255,0.15);
 }
 
 .search-item { cursor: pointer; }
 .search-selected {
-  background: rgba(0, 245, 255, 0.15);
+  background: rgba(0,245,255,0.15);
   border-left: 3px solid #00f5ff;
 }
 
-/* Hide sub list scrollbar when search is open */
 .search-open #sub-list-container { overflow: hidden !important; }
 .search-open #sub-list-container::-webkit-scrollbar { display: none; }
 
-/* Logo container */
+/* === COMPONENTS === */
 .logo-container {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.1);
   border-radius: 6px;
   padding: 2px;
   display: flex;
@@ -110,14 +99,8 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   justify-content: center;
 }
 
-/* Delete button */
-.delete-btn {
-  color: #6b7280;
-  transition: color 0.15s ease;
-}
-.delete-btn:hover {
-  color: #ef4444;
-}
+.delete-btn { color: #6b7280; transition: color 0.15s ease; }
+.delete-btn:hover { color: #ef4444; }
 
 /* === LIGHT THEME === */
 html:not(.dark) body {
@@ -125,26 +108,27 @@ html:not(.dark) body {
   color: #1e293b;
 }
 
-html:not(.dark) .scan-lines { display: none; }
+html:not(.dark) .scan-lines {
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.015) 2px, rgba(0,0,0,0.015) 4px);
+}
+
 html:not(.dark) .retro-grid { 
-  background-image: 
-    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
 }
 
 html:not(.dark) .bg-retro-card { 
-  background: rgba(255, 255, 255, 0.9); 
+  background: rgba(255,255,255,0.9); 
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 html:not(.dark) .bg-retro-dark { background: transparent; }
 html:not(.dark) .bg-retro-darker { background: #f1f5f9; }
-html:not(.dark) .border-retro-border { border-color: rgba(0, 0, 0, 0.08); }
+html:not(.dark) .border-retro-border { border-color: rgba(0,0,0,0.08); }
 
 html:not(.dark) .text-white { color: #1e293b; }
 html:not(.dark) .text-gray-300 { color: #475569; }
 html:not(.dark) .text-gray-400 { color: #64748b; }
-html:not(.dark) .text-gray-500 { color: #94a3b8; }
+html:not(.dark) .text-gray-500,
 html:not(.dark) .text-gray-600 { color: #94a3b8; }
 
 html:not(.dark) .text-neon-cyan { color: #0891b2; }
@@ -154,57 +138,30 @@ html:not(.dark) .text-neon-purple { color: #7c3aed; }
 html:not(.dark) .bg-neon-cyan { background: #06b6d4; }
 html:not(.dark) .hover\:text-neon-cyan:hover { color: #0891b2; }
 html:not(.dark) .hover\:text-neon-pink:hover { color: #db2777; }
-html:not(.dark) .hover\:border-neon-cyan\/50:hover { border-color: rgba(8, 145, 178, 0.5); }
+html:not(.dark) .hover\:border-neon-cyan\/50:hover { border-color: rgba(8,145,178,0.5); }
 html:not(.dark) .focus\:border-neon-cyan:focus { border-color: #0891b2; }
 
-html:not(.dark) .treemap-container {
-  background: #e8e8f0;
-}
-
-html:not(.dark) .treemap-cell-inner {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
+html:not(.dark) .treemap-container { background: #e8e8f0; }
+html:not(.dark) .treemap-cell-inner { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 html:not(.dark) .treemap-cell:hover .treemap-cell-inner {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
   transform: scale(1.02);
 }
 
-html:not(.dark) #theme-btn {
-  background: white;
-  border-color: #e2e8f0;
-  color: #64748b;
-}
+html:not(.dark) #theme-btn { background: white; border-color: #e2e8f0; color: #64748b; }
+html:not(.dark) #theme-btn:hover { border-color: #0891b2; color: #0891b2; }
 
-html:not(.dark) #theme-btn:hover {
-  border-color: #0891b2;
-  color: #0891b2;
-}
-
-html:not(.dark) ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.03); }
+html:not(.dark) ::-webkit-scrollbar-track { background: rgba(0,0,0,0.03); }
 html:not(.dark) ::-webkit-scrollbar-thumb { background-color: #cbd5e1; }
 html:not(.dark) ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
 
-html:not(.dark) .sub-item {
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-html:not(.dark) .logo-container {
-  background: rgba(0, 0, 0, 0.03);
-}
+html:not(.dark) .sub-item { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+html:not(.dark) .logo-container { background: rgba(0,0,0,0.03); }
 
 html:not(.dark) #search-dropdown {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-color: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.12);
 }
-
-html:not(.dark) .search-selected {
-  background: rgba(6, 182, 212, 0.15);
-  border-left-color: #06b6d4;
-}
-
-html:not(.dark) .bg-black\/30 {
-  background: rgba(0, 0, 0, 0.05);
-}
+html:not(.dark) .search-selected { background: rgba(6,182,212,0.15); border-left-color: #06b6d4; }
+html:not(.dark) .bg-black\/30 { background: rgba(0,0,0,0.05); }

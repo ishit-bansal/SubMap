@@ -10,7 +10,6 @@ let searchResults = [];
 let modalOpen = false;
 let resizeTimeout = null;
 
-// Color palette
 const colors = [
   { id: 'purple', bg: '#2d1b4e', accent: '#b026ff', light: { bg: '#f3e8ff', accent: '#a855f7' } },
   { id: 'blue', bg: '#1e3a5f', accent: '#3b82f6', light: { bg: '#dbeafe', accent: '#3b82f6' } },
@@ -41,67 +40,36 @@ const defaultSubs = [
 
 function getUniqueColor() {
   const available = colors.filter(c => !usedColors.has(c.id));
-  if (available.length === 0) {
-    usedColors.clear();
-    return colors[Math.floor(Math.random() * colors.length)];
-  }
+  if (available.length === 0) { usedColors.clear(); return colors[Math.floor(Math.random() * colors.length)]; }
   const color = available[Math.floor(Math.random() * available.length)];
   usedColors.add(color.id);
   return color;
 }
 
-function updateUsedColors() {
-  usedColors.clear();
-  subs.forEach(s => usedColors.add(s.color));
-}
+function updateUsedColors() { usedColors.clear(); subs.forEach(s => usedColors.add(s.color)); }
 
 function getColor(colorId) {
   const c = colors.find(x => x.id === colorId) || colors[0];
   return isDark ? { bg: c.bg, accent: c.accent } : c.light;
 }
 
-function formatMoney(amount) {
-  const n = Number.isFinite(amount) ? amount : 0;
-  return n >= 1000 ? '$' + n.toFixed(0) : '$' + n.toFixed(2);
-}
-
-function formatShort(amount) {
-  const n = Number.isFinite(amount) ? amount : 0;
-  if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 10_000) return '$' + (n / 1_000).toFixed(0) + 'k';
-  return n >= 100 ? '$' + n.toFixed(0) : '$' + n.toFixed(2);
-}
-
-function toMonthly(sub) {
-  if (sub.cycle === 'Yearly') return sub.price / 12;
-  if (sub.cycle === 'Weekly') return sub.price * 4.33;
-  return sub.price;
-}
+function formatMoney(n) { n = Number.isFinite(n) ? n : 0; return n >= 1000 ? '$' + n.toFixed(0) : '$' + n.toFixed(2); }
+function formatShort(n) { n = Number.isFinite(n) ? n : 0; if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M'; if (n >= 1e4) return '$' + (n/1e3).toFixed(0) + 'k'; return n >= 100 ? '$' + n.toFixed(0) : '$' + n.toFixed(2); }
+function toMonthly(sub) { if (sub.cycle === 'Yearly') return sub.price / 12; if (sub.cycle === 'Weekly') return sub.price * 4.33; return sub.price; }
+function getMonthlyTotal() { return subs.reduce((sum, sub) => sum + toMonthly(sub), 0); }
 
 function iconHtml(sub, className, withContainer = false) {
-  if (!sub.url) {
-    return '<span class="iconify ' + className + ' text-gray-400" data-icon="ph:cube-bold"></span>';
-  }
+  if (!sub.url) return '<span class="iconify ' + className + ' text-gray-400" data-icon="ph:cube-bold"></span>';
   const domain = sub.url.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-  const logoUrl = 'https://img.logo.dev/' + domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
-  const img = '<img src="' + logoUrl + '" class="' + className + ' object-contain rounded" crossorigin="anonymous">';
+  const url = 'https://img.logo.dev/' + domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
+  const img = '<img src="' + url + '" class="' + className + ' object-contain rounded" crossorigin="anonymous">';
   return withContainer ? '<div class="logo-container">' + img + '</div>' : img;
 }
 
-function getMonthlyTotal() {
-  return subs.reduce((sum, sub) => sum + toMonthly(sub), 0);
-}
-
-// ===== Search =====
+// Search
 function openSearchDropdown() {
-  const dropdown = document.getElementById('search-dropdown');
-  const input = document.getElementById('main-search');
-  if (dropdown && input) {
-    dropdown.classList.remove('hidden');
-    document.body.classList.add('search-open');
-    selectedSearchIndex = 0;
-    renderSearchResults(input.value);
-  }
+  const dropdown = document.getElementById('search-dropdown'), input = document.getElementById('main-search');
+  if (dropdown && input) { dropdown.classList.remove('hidden'); document.body.classList.add('search-open'); selectedSearchIndex = 0; renderSearchResults(input.value); }
 }
 
 function closeSearchDropdown() {
@@ -114,514 +82,252 @@ function closeSearchDropdown() {
 function handleSearchInput(query) {
   selectedSearchIndex = 0;
   const dropdown = document.getElementById('search-dropdown');
-  if (dropdown) {
-    dropdown.classList.remove('hidden');
-    document.body.classList.add('search-open');
-    renderSearchResults(query);
-  }
+  if (dropdown) { dropdown.classList.remove('hidden'); document.body.classList.add('search-open'); renderSearchResults(query); }
 }
 
 function handleSearchKeydown(e) {
   if (modalOpen) return;
-  
   const dropdown = document.getElementById('search-dropdown');
+  if (!dropdown || dropdown.classList.contains('hidden')) { if (e.key !== 'Escape' && e.key !== 'Tab') openSearchDropdown(); return; }
   
-  if (!dropdown || dropdown.classList.contains('hidden')) {
-    if (e.key !== 'Escape' && e.key !== 'Tab') {
-      openSearchDropdown();
-    }
-    return;
-  }
-
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    selectedSearchIndex = Math.min(selectedSearchIndex + 1, searchResults.length - 1);
-    updateSearchHighlight();
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    selectedSearchIndex = Math.max(selectedSearchIndex - 1, 0);
-    updateSearchHighlight();
-  } else if (e.key === 'Enter') {
-    e.preventDefault();
-    e.stopPropagation();
-    if (searchResults.length > 0 && searchResults[selectedSearchIndex]) {
-      const item = searchResults[selectedSearchIndex];
-      if (item.type === 'preset') {
-        quickAddPreset(item.idx);
-      } else if (item.type === 'custom') {
-        addCustomFromSearch(item.name);
-      }
-    }
-  } else if (e.key === 'Escape') {
-    closeSearchDropdown();
-    document.getElementById('main-search').blur();
-  }
+  if (e.key === 'ArrowDown') { e.preventDefault(); selectedSearchIndex = Math.min(selectedSearchIndex + 1, searchResults.length - 1); updateSearchHighlight(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); selectedSearchIndex = Math.max(selectedSearchIndex - 1, 0); updateSearchHighlight(); }
+  else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (searchResults[selectedSearchIndex]) { const item = searchResults[selectedSearchIndex]; item.type === 'preset' ? quickAddPreset(item.idx) : addCustomFromSearch(item.name); } }
+  else if (e.key === 'Escape') { closeSearchDropdown(); document.getElementById('main-search').blur(); }
 }
 
 function updateSearchHighlight() {
-  const buttons = document.querySelectorAll('#search-dropdown .search-item');
-  buttons.forEach((btn, i) => {
-    if (i === selectedSearchIndex) {
-      btn.classList.add('search-selected');
-      btn.classList.remove('hover:bg-retro-border');
-    } else {
-      btn.classList.remove('search-selected');
-      btn.classList.add('hover:bg-retro-border');
-    }
+  document.querySelectorAll('#search-dropdown .search-item').forEach((btn, i) => {
+    btn.classList.toggle('search-selected', i === selectedSearchIndex);
+    btn.classList.toggle('hover:bg-retro-border', i !== selectedSearchIndex);
   });
 }
 
 function renderSearchResults(query) {
   const dropdown = document.getElementById('search-dropdown');
   if (!dropdown) return;
-
+  
   const q = (query || '').toLowerCase().trim();
-  let filtered = presets;
-
-  if (q.length > 0) {
-    filtered = presets.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
-      p.domain.toLowerCase().includes(q)
-    );
-  }
-
+  let filtered = q.length > 0 ? presets.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.domain.toLowerCase().includes(q)) : presets;
+  
   searchResults = [];
   let html = '';
-
   const byCategory = {};
-  for (const p of filtered) {
-    if (!byCategory[p.category]) byCategory[p.category] = [];
-    byCategory[p.category].push(p);
-  }
-
+  for (const p of filtered) { if (!byCategory[p.category]) byCategory[p.category] = []; byCategory[p.category].push(p); }
+  
   for (const cat of Object.keys(byCategory)) {
     html += '<div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-gray-400 bg-black/30">' + cat + '</div>';
     for (const p of byCategory[cat]) {
-      const idx = presets.indexOf(p);
-      const logo = 'https://img.logo.dev/' + p.domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
-      const isSelected = searchResults.length === selectedSearchIndex;
+      const idx = presets.indexOf(p), isSelected = searchResults.length === selectedSearchIndex;
       searchResults.push({ type: 'preset', idx });
+      const logo = 'https://img.logo.dev/' + p.domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
       html += '<button onclick="quickAddPreset(' + idx + ')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
       html += '<div class="logo-container"><img src="' + logo + '" class="h-8 w-8 rounded object-contain"></div>';
-      html += '<div class="flex-1 font-semibold text-white text-sm">' + p.name + '</div>';
-      html += '<div class="text-xs font-mono text-gray-400">$' + p.price + '</div></button>';
+      html += '<div class="flex-1 font-semibold text-white text-sm">' + p.name + '</div><div class="text-xs font-mono text-gray-400">$' + p.price + '</div></button>';
     }
   }
-
+  
   if (q.length > 0) {
     searchResults.push({ type: 'custom', name: q });
     const isSelected = searchResults.length - 1 === selectedSearchIndex;
-    html += '<div class="border-t border-white/10">';
-    html += '<button onclick="addCustomFromSearch(\'' + q.replace(/'/g, "\\'") + '\')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
-    html += '<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neon-cyan/20 text-neon-cyan">';
-    html += '<span class="iconify h-4 w-4" data-icon="ph:plus-bold"></span></div>';
+    html += '<div class="border-t border-white/10"><button onclick="addCustomFromSearch(\'' + q.replace(/'/g, "\\'") + '\')" class="search-item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ' + (isSelected ? 'search-selected' : 'hover:bg-retro-border') + '">';
+    html += '<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neon-cyan/20 text-neon-cyan"><span class="iconify h-4 w-4" data-icon="ph:plus-bold"></span></div>';
     html += '<div class="flex-1"><div class="font-semibold text-neon-cyan text-sm">Add "' + q + '" manually</div></div></button></div>';
   }
-
-  if (html === '') {
-    html = '<div class="p-4 text-center text-gray-500 text-sm font-mono">No results found</div>';
-  }
-
-  dropdown.innerHTML = html;
+  
+  dropdown.innerHTML = html || '<div class="p-4 text-center text-gray-500 text-sm font-mono">No results found</div>';
 }
 
 function quickAddPreset(idx) {
-  const preset = presets[idx];
-  if (!preset) return;
-  
+  const preset = presets[idx]; if (!preset) return;
   playSound('add');
-  
-  subs.push({
-    id: Date.now().toString(),
-    name: preset.name,
-    price: preset.price,
-    cycle: preset.cycle,
-    url: preset.domain,
-    color: getUniqueColor().id,
-    date: new Date().toISOString().split('T')[0]
-  });
-  
-  save();
-  closeSearchDropdown();
-  const searchInput = document.getElementById('main-search');
-  searchInput.value = '';
-  searchInput.focus();
+  subs.push({ id: Date.now().toString(), name: preset.name, price: preset.price, cycle: preset.cycle, url: preset.domain, color: getUniqueColor().id, date: new Date().toISOString().split('T')[0] });
+  save(); closeSearchDropdown();
+  const input = document.getElementById('main-search'); input.value = ''; input.focus();
 }
 
-function addCustomFromSearch(name) {
-  playSound('click');
-  closeSearchDropdown();
-  document.getElementById('main-search').value = '';
-  openModalWithName(name);
-}
+function addCustomFromSearch(name) { playSound('click'); closeSearchDropdown(); document.getElementById('main-search').value = ''; openModalWithName(name); }
 
 function openModalWithName(name) {
-  const form = document.getElementById('sub-form');
-  if (form) form.reset();
+  const form = document.getElementById('sub-form'); if (form) form.reset();
   document.getElementById('entry-id').value = '';
   document.getElementById('name').value = name || '';
   document.getElementById('price').value = '';
   document.getElementById('cycle').value = 'Monthly';
   document.getElementById('url').value = '';
-  updateFavicon('');
-  pickColor(getUniqueColor().id);
+  updateFavicon(''); pickColor(getUniqueColor().id);
   document.getElementById('modal-title').innerText = 'Add Subscription';
   showModal();
-  setTimeout(() => {
-    const priceInput = document.getElementById('price');
-    if (priceInput) priceInput.focus();
-  }, 100);
+  setTimeout(() => { const p = document.getElementById('price'); if (p) p.focus(); }, 100);
 }
 
-// ===== Subscription List =====
+// Subscription List
 function renderList() {
-  const listContainer = document.getElementById('sub-list-container');
-  const clearBtn = document.getElementById('clear-btn');
-  if (!listContainer) return;
-
-  if (subs.length === 0) {
-    listContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500 text-xs font-mono">No subscriptions</div>';
-    if (clearBtn) clearBtn.classList.add('hidden');
-    return;
-  }
-
+  const list = document.getElementById('sub-list-container'), clearBtn = document.getElementById('clear-btn');
+  if (!list) return;
+  
+  if (subs.length === 0) { list.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500 text-xs font-mono">No subscriptions</div>'; if (clearBtn) clearBtn.classList.add('hidden'); return; }
   if (clearBtn) clearBtn.classList.remove('hidden');
-
+  
   let html = '';
   for (const sub of subs) {
     const color = getColor(sub.color);
     html += '<div class="sub-item flex items-center gap-2 p-2 bg-retro-darker rounded-lg" data-id="' + sub.id + '">';
-    html += '<div class="w-0.5 h-6 rounded-full shrink-0" style="background:' + color.accent + '"></div>';
-    html += iconHtml(sub, 'w-7 h-7', true);
-    html += '<div class="flex-1 min-w-0">';
-    html += '<div class="font-medium text-white text-xs truncate">' + sub.name + '</div>';
-    html += '<div class="flex items-baseline text-[11px] font-mono">';
-    html += '<span class="text-gray-400">$</span>';
+    html += '<div class="w-0.5 h-6 rounded-full shrink-0" style="background:' + color.accent + '"></div>' + iconHtml(sub, 'w-7 h-7', true);
+    html += '<div class="flex-1 min-w-0"><div class="font-medium text-white text-xs truncate">' + sub.name + '</div>';
+    html += '<div class="flex items-baseline text-[11px] font-mono"><span class="text-gray-400">$</span>';
     html += '<input type="number" step="0.01" value="' + sub.price + '" onchange="updateSubPrice(\'' + sub.id + '\',this.value)" onclick="this.select()" class="w-12 bg-transparent border-0 p-0 text-xs font-bold text-gray-300 focus:ring-0 focus:text-neon-cyan"/>';
-    html += '<span class="text-gray-500 text-[9px]">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span>';
-    html += '</div></div>';
-    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="delete-btn p-1 shrink-0">';
-    html += '<span class="iconify h-4 w-4" data-icon="ph:x-bold"></span></button></div>';
+    html += '<span class="text-gray-500 text-[9px]">/' + sub.cycle.toLowerCase().slice(0, 2) + '</span></div></div>';
+    html += '<button onclick="removeSub(\'' + sub.id + '\')" class="delete-btn p-1 shrink-0"><span class="iconify h-4 w-4" data-icon="ph:x-bold"></span></button></div>';
   }
-  listContainer.innerHTML = html;
+  list.innerHTML = html;
   updateUsedColors();
 }
 
-function updateSubPrice(id, val) {
-  const sub = subs.find(s => s.id === id);
-  if (sub) { sub.price = parseFloat(val) || 0; save(); }
-}
+function updateSubPrice(id, val) { const sub = subs.find(s => s.id === id); if (sub) { sub.price = parseFloat(val) || 0; save(); } }
+function removeSub(id) { playSound('remove'); subs = subs.filter(s => s.id !== id); save(); }
+function clearAllSubs() { if (!confirm('Remove all subscriptions?')) return; playSound('remove'); subs = []; usedColors.clear(); save(); }
 
-function removeSub(id) {
-  playSound('remove');
-  subs = subs.filter(s => s.id !== id);
-  save();
-}
-
-function clearAllSubs() {
-  if (!confirm('Remove all subscriptions?')) return;
-  playSound('remove');
-  subs = [];
-  usedColors.clear();
-  save();
-}
-
-// ===== Color Picker =====
+// Color Picker
 function initColorPicker() {
-  const container = document.getElementById('color-selector');
-  if (!container) return;
-  let html = '';
-  for (const c of colors) {
-    html += '<div onclick="pickColor(\'' + c.id + '\')" class="color-option cursor-pointer rounded h-5 border-2 border-transparent transition-all hover:scale-110" data-val="' + c.id + '" style="background:linear-gradient(135deg,' + c.bg + ',' + c.accent + ')"></div>';
-  }
-  container.innerHTML = html;
+  const container = document.getElementById('color-selector'); if (!container) return;
+  container.innerHTML = colors.map(c => '<div onclick="pickColor(\'' + c.id + '\')" class="color-option cursor-pointer rounded h-5 border-2 border-transparent transition-all hover:scale-110" data-val="' + c.id + '" style="background:linear-gradient(135deg,' + c.bg + ',' + c.accent + ')"></div>').join('');
 }
 
 function pickColor(id) {
   document.getElementById('selected-color').value = id;
-  document.querySelectorAll('.color-option').forEach(opt => {
-    opt.classList.toggle('ring-2', opt.dataset.val === id);
-    opt.classList.toggle('ring-neon-cyan', opt.dataset.val === id);
-  });
+  document.querySelectorAll('.color-option').forEach(opt => { opt.classList.toggle('ring-2', opt.dataset.val === id); opt.classList.toggle('ring-neon-cyan', opt.dataset.val === id); });
 }
 
 let faviconDebounce = null;
 function updateFavicon(urlInput) {
   clearTimeout(faviconDebounce);
   faviconDebounce = setTimeout(() => {
-    const preview = document.getElementById('favicon-preview');
-    if (!preview) return;
-    if (!urlInput) {
-      preview.innerHTML = '<span class="iconify text-gray-600 h-6 w-6" data-icon="ph:globe-simple"></span>';
-      return;
-    }
+    const preview = document.getElementById('favicon-preview'); if (!preview) return;
+    if (!urlInput) { preview.innerHTML = '<span class="iconify text-gray-600 h-6 w-6" data-icon="ph:globe-simple"></span>'; return; }
     const domain = urlInput.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-    if (domain.length > 3) {
-      const logoUrl = 'https://img.logo.dev/' + domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png';
-      preview.innerHTML = '<img src="' + logoUrl + '" class="w-full h-full object-cover">';
-    }
+    if (domain.length > 3) preview.innerHTML = '<img src="https://img.logo.dev/' + domain + '?token=pk_KuI_oR-IQ1-fqpAfz3FPEw&size=100&retina=true&format=png" class="w-full h-full object-cover">';
   }, 400);
 }
 
 function handleFormSubmit(evt) {
-  evt.preventDefault();
-  evt.stopPropagation();
-  
+  evt.preventDefault(); evt.stopPropagation();
   const existingId = document.getElementById('entry-id').value;
-  const subData = {
-    id: existingId || Date.now().toString(),
-    name: document.getElementById('name').value,
-    price: parseFloat(document.getElementById('price').value) || 0,
-    cycle: document.getElementById('cycle').value,
-    url: document.getElementById('url').value,
-    color: document.getElementById('selected-color').value || getUniqueColor().id,
-    date: document.getElementById('date').value || ''
-  };
-
-  if (existingId) {
-    const idx = subs.findIndex(s => s.id === existingId);
-    if (idx !== -1) subs[idx] = subData;
-  } else {
-    playSound('add');
-    subs.push(subData);
-  }
-  save();
-  hideModal();
+  const subData = { id: existingId || Date.now().toString(), name: document.getElementById('name').value, price: parseFloat(document.getElementById('price').value) || 0, cycle: document.getElementById('cycle').value, url: document.getElementById('url').value, color: document.getElementById('selected-color').value || getUniqueColor().id, date: document.getElementById('date').value || '' };
+  if (existingId) { const idx = subs.findIndex(s => s.id === existingId); if (idx !== -1) subs[idx] = subData; }
+  else { playSound('add'); subs.push(subData); }
+  save(); hideModal();
 }
 
-// ===== Income & Work Time =====
+// Income & Work Time
 function handleIncomeChange() {
-  const amountInput = document.getElementById('income-amount');
-  const unitSelect = document.getElementById('income-unit');
-  incomeState.amount = parseFloat(amountInput.value) || 0;
-  incomeState.unit = unitSelect.value;
-  saveIncome(incomeState);
-  renderTotals();
+  incomeState.amount = parseFloat(document.getElementById('income-amount').value) || 0;
+  incomeState.unit = document.getElementById('income-unit').value;
+  saveIncome(incomeState); renderTotals();
 }
 
 function getHourlyRate() {
-  const { amount, unit } = incomeState;
-  if (amount <= 0) return 0;
-  switch (unit) {
-    case 'hourly': return amount;
-    case 'daily': return amount / 8;
-    case 'weekly': return amount / 40;
-    case 'monthly': return amount / 173;
-    default: return 0;
-  }
+  const { amount, unit } = incomeState; if (amount <= 0) return 0;
+  const rates = { hourly: 1, daily: 1/8, weekly: 1/40, monthly: 1/173 };
+  return amount * (rates[unit] || 0);
 }
 
 function formatWorkTime(monthlyTotal) {
-  const { amount, unit } = incomeState;
-  if (amount <= 0) return '—';
-
-  const yearlyTotal = monthlyTotal * 12;
-  const hourlyRate = getHourlyRate();
-  const totalHours = yearlyTotal / hourlyRate;
-
+  const { amount, unit } = incomeState; if (amount <= 0) return '—';
+  const yearlyTotal = monthlyTotal * 12, totalHours = yearlyTotal / getHourlyRate();
   switch (unit) {
-    case 'hourly':
-      if (totalHours < 1) return Math.round(totalHours * 60) + 'm';
-      const h = Math.floor(totalHours);
-      const m = Math.round((totalHours - h) * 60);
-      return h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
-    case 'daily':
-      const daysD = totalHours / 8;
-      return daysD < 1 ? Math.round(daysD * 8) + 'h' : daysD.toFixed(1) + 'd';
-    case 'weekly':
-      const weeks = totalHours / 40;
-      const daysW = totalHours / 8;
-      return weeks < 1 ? daysW.toFixed(1) + 'd' : weeks.toFixed(1) + 'w';
-    case 'monthly':
-      const yearlyIncome = amount * 12;
-      return ((yearlyTotal / yearlyIncome) * 100).toFixed(1) + '%';
+    case 'hourly': const h = Math.floor(totalHours), m = Math.round((totalHours - h) * 60); return totalHours < 1 ? m + 'm' : h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
+    case 'daily': const d = totalHours / 8; return d < 1 ? Math.round(d * 8) + 'h' : d.toFixed(1) + 'd';
+    case 'weekly': const w = totalHours / 40; return w < 1 ? (totalHours / 8).toFixed(1) + 'd' : w.toFixed(1) + 'w';
+    case 'monthly': return ((yearlyTotal / (amount * 12)) * 100).toFixed(1) + '%';
     default: return '—';
   }
 }
 
 function updateTotals(monthlyTotal) {
-  const totalEl = document.getElementById('step-2-total');
-  const yearlyEl = document.getElementById('step-2-yearly');
-  const timeEl = document.getElementById('time-worked');
-
-  if (totalEl) totalEl.innerText = formatMoney(monthlyTotal);
-  if (yearlyEl) yearlyEl.innerText = formatMoney(monthlyTotal * 12);
-  if (timeEl) timeEl.innerText = formatWorkTime(monthlyTotal);
+  const el = (id, val) => { const e = document.getElementById(id); if (e) e.innerText = val; };
+  el('step-2-total', formatMoney(monthlyTotal));
+  el('step-2-yearly', formatMoney(monthlyTotal * 12));
+  el('time-worked', formatWorkTime(monthlyTotal));
 }
 
-function renderTotals() {
-  updateTotals(getMonthlyTotal());
-}
+function renderTotals() { updateTotals(getMonthlyTotal()); }
 
-// ===== Treemap Grid =====
+// Treemap Grid
 function renderGrid() {
-  const gridEl = document.getElementById('bento-grid');
-  if (!gridEl) return;
-
+  const gridEl = document.getElementById('bento-grid'); if (!gridEl) return;
   const monthlyTotal = getMonthlyTotal();
 
-  if (subs.length === 0) {
-    gridEl.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500 text-sm font-mono">Add subscriptions to visualize</div>';
-    updateTotals(monthlyTotal);
-    return;
-  }
-
-  const items = subs.map(sub => ({
-    id: sub.id, name: sub.name, url: sub.url, color: sub.color,
-    price: sub.price, cycle: sub.cycle, cost: toMonthly(sub)
-  })).sort((a, b) => b.cost - a.cost);
+  if (subs.length === 0) { gridEl.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500 text-sm font-mono">Add subscriptions to visualize</div>'; updateTotals(monthlyTotal); return; }
 
   const bounds = gridEl.getBoundingClientRect();
-  const gridWidth = bounds.width || 600;
-  const gridHeight = bounds.height || 400;
-
-  if (gridWidth < 50 || gridHeight < 50) {
-    setTimeout(renderGrid, 100);
-    return;
-  }
-
-  const treemapData = items.map((item, idx) => ({ ...item, val: item.cost, idx }));
-  const treemap = new Treemap(gridWidth, gridHeight);
-  const cells = treemap.layout(treemapData);
-
+  if (bounds.width < 50 || bounds.height < 50) { setTimeout(renderGrid, 100); return; }
+  
+  const items = subs.map(sub => ({ id: sub.id, name: sub.name, url: sub.url, color: sub.color, price: sub.price, cycle: sub.cycle, cost: toMonthly(sub) })).sort((a, b) => b.cost - a.cost);
+  const treemap = new Treemap(bounds.width, bounds.height);
+  const cells = treemap.layout(items.map((item, idx) => ({ ...item, val: item.cost, idx })));
+  
   let html = '';
-  for (let i = 0; i < cells.length; i++) {
-    const cell = cells[i];
-    const percent = monthlyTotal > 0 ? (cell.cost / monthlyTotal) * 100 : 0;
-    const color = getColor(cell.color);
-    const minDim = Math.min(cell.w, cell.h);
+  cells.forEach((cell, i) => {
+    const percent = monthlyTotal > 0 ? (cell.cost / monthlyTotal) * 100 : 0, color = getColor(cell.color), minDim = Math.min(cell.w, cell.h);
     const clampedPct = Math.max(3, Math.min(60, percent));
-
     const padding = Math.round(Math.max(6, Math.min(minDim * 0.08, 14)) + (clampedPct / 60) * 6);
     const borderRadius = Math.round(Math.max(6, Math.min(minDim * 0.12, 18)) + (clampedPct / 60) * 4);
-    const innerW = cell.w - padding * 2;
-    const innerH = cell.h - padding * 2;
-
-    const priceFont = Math.max(12, Math.min(14 + (clampedPct / 60) * 36, Math.min(innerW * 0.2, innerH * 0.32), 48));
+    const priceFont = Math.max(12, Math.min(14 + (clampedPct / 60) * 36, Math.min((cell.w - padding*2) * 0.2, (cell.h - padding*2) * 0.32), 48));
     const titleFont = Math.max(10, Math.min(11 + (clampedPct / 60) * 14, priceFont * 0.6, 24));
-    const iconSize = Math.max(18, Math.min(20 + (clampedPct / 60) * 32, innerH * 0.35, innerW * 0.4, 52));
-
-    const isMicro = minDim < 40, isTiny = minDim < 55, isSmall = minDim < 80;
-    let content = '';
+    const iconSize = Math.max(18, Math.min(20 + (clampedPct / 60) * 32, (cell.h - padding*2) * 0.35, (cell.w - padding*2) * 0.4, 52));
     const priceLabel = formatShort(cell.cost);
-
-    if (isMicro) {
-      const sz = Math.max(14, Math.min(iconSize, minDim * 0.55));
-      content = '<div class="flex items-center justify-center h-full">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '</div>';
-    } else if (isTiny) {
-      const sz = Math.max(16, Math.min(iconSize, minDim * 0.45));
-      content = '<div class="flex flex-col items-center justify-center h-full gap-0.5">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-bold text-white font-mono" style="font-size:' + Math.min(priceFont, 13) + 'px">' + priceLabel + '</div></div>';
-    } else if (isSmall) {
-      const sz = Math.max(18, Math.min(iconSize, innerW * 0.4, innerH * 0.32));
-      content = '<div class="flex flex-col items-center justify-center h-full gap-0.5 text-center">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-semibold text-white truncate w-full px-1" style="font-size:' + Math.min(titleFont, 12) + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + Math.min(priceFont, 18) + 'px">' + priceLabel + '</div></div>';
-    } else {
-      const showBadge = cell.w > 80 && cell.h > 65;
-      content = '<div class="flex justify-between items-start">' + iconHtml(cell, 'w-[' + iconSize + 'px] h-[' + iconSize + 'px]');
-      if (showBadge) content += '<span class="text-[10px] font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded text-white">' + Math.round(percent) + '%</span>';
-      content += '</div><div class="mt-auto min-w-0"><div class="font-bold text-white truncate" style="font-size:' + titleFont + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + priceFont + 'px">' + priceLabel + '</div></div>';
-    }
-
-    const delay = i * 50;
-    html += '<div class="treemap-cell tile-enter" style="left:' + cell.x + 'px;top:' + cell.y + 'px;width:' + cell.w + 'px;height:' + cell.h + 'px;border-radius:' + borderRadius + 'px;animation-delay:' + delay + 'ms">';
+    
+    let content = '';
+    if (minDim < 40) { const sz = Math.max(14, Math.min(iconSize, minDim * 0.55)); content = '<div class="flex items-center justify-center h-full">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '</div>'; }
+    else if (minDim < 55) { const sz = Math.max(16, Math.min(iconSize, minDim * 0.45)); content = '<div class="flex flex-col items-center justify-center h-full gap-0.5">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-bold text-white font-mono" style="font-size:' + Math.min(priceFont, 13) + 'px">' + priceLabel + '</div></div>'; }
+    else if (minDim < 80) { const sz = Math.max(18, Math.min(iconSize, (cell.w-padding*2) * 0.4, (cell.h-padding*2) * 0.32)); content = '<div class="flex flex-col items-center justify-center h-full gap-0.5 text-center">' + iconHtml(cell, 'w-[' + sz + 'px] h-[' + sz + 'px]') + '<div class="font-semibold text-white truncate w-full px-1" style="font-size:' + Math.min(titleFont, 12) + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + Math.min(priceFont, 18) + 'px">' + priceLabel + '</div></div>'; }
+    else { const showBadge = cell.w > 80 && cell.h > 65; content = '<div class="flex justify-between items-start">' + iconHtml(cell, 'w-[' + iconSize + 'px] h-[' + iconSize + 'px]') + (showBadge ? '<span class="text-[10px] font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded text-white">' + Math.round(percent) + '%</span>' : '') + '</div><div class="mt-auto min-w-0"><div class="font-bold text-white truncate" style="font-size:' + titleFont + 'px">' + cell.name + '</div><div class="font-black text-white font-mono" style="font-size:' + priceFont + 'px">' + priceLabel + '</div></div>'; }
+    
+    html += '<div class="treemap-cell tile-enter" style="left:' + cell.x + 'px;top:' + cell.y + 'px;width:' + cell.w + 'px;height:' + cell.h + 'px;border-radius:' + borderRadius + 'px;animation-delay:' + (i * 50) + 'ms">';
     html += '<div class="treemap-cell-inner" style="background:linear-gradient(135deg,' + color.bg + ',' + color.accent + ');padding:' + padding + 'px;border-radius:' + borderRadius + 'px">' + content + '</div></div>';
-  }
+  });
 
   gridEl.innerHTML = html;
   updateTotals(monthlyTotal);
 }
 
-// Debounced resize handler
-function handleResize() {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    renderGrid();
-  }, 150);
-}
+function handleResize() { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(renderGrid, 150); }
 
-// ===== Theme =====
+// Theme
 function toggleTheme() {
-  playSound('theme');
-  isDark = !isDark;
+  playSound('theme'); isDark = !isDark;
   document.documentElement.classList.toggle('dark', isDark);
   localStorage.setItem('submap_theme', isDark ? 'dark' : 'light');
-  
-  const btn = document.getElementById('theme-btn');
-  if (btn) {
-    const icon = btn.querySelector('.iconify');
-    if (icon) icon.setAttribute('data-icon', isDark ? 'ph:moon-bold' : 'ph:sun-bold');
-  }
-  
-  renderList();
-  renderGrid();
+  const icon = document.querySelector('#theme-btn .iconify');
+  if (icon) icon.setAttribute('data-icon', isDark ? 'ph:moon-bold' : 'ph:sun-bold');
+  renderList(); renderGrid();
 }
 
 function loadTheme() {
-  const saved = localStorage.getItem('submap_theme');
-  isDark = saved !== 'light';
+  isDark = localStorage.getItem('submap_theme') !== 'light';
   document.documentElement.classList.toggle('dark', isDark);
-  
-  const btn = document.getElementById('theme-btn');
-  if (btn) {
-    const icon = btn.querySelector('.iconify');
-    if (icon) icon.setAttribute('data-icon', isDark ? 'ph:moon-bold' : 'ph:sun-bold');
-  }
+  const icon = document.querySelector('#theme-btn .iconify');
+  if (icon) icon.setAttribute('data-icon', isDark ? 'ph:moon-bold' : 'ph:sun-bold');
 }
 
-// ===== Init =====
+// Init
 function initDefaults() {
   if (subs.length === 0) {
-    for (const def of defaultSubs) {
-      subs.push({
-        id: Date.now().toString() + Math.random().toString(36).slice(2),
-        name: def.name, price: def.price, cycle: def.cycle,
-        url: def.domain, color: def.color,
-        date: new Date().toISOString().split('T')[0]
-      });
-    }
+    defaultSubs.forEach(def => subs.push({ id: Date.now().toString() + Math.random().toString(36).slice(2), name: def.name, price: def.price, cycle: def.cycle, url: def.domain, color: def.color, date: new Date().toISOString().split('T')[0] }));
     save();
   }
   updateUsedColors();
 }
 
 function syncIncomeInputs() {
-  const amountInput = document.getElementById('income-amount');
-  const unitSelect = document.getElementById('income-unit');
-  if (amountInput) amountInput.value = incomeState.amount || '';
-  if (unitSelect) unitSelect.value = incomeState.unit || 'hourly';
+  const a = document.getElementById('income-amount'), u = document.getElementById('income-unit');
+  if (a) a.value = incomeState.amount || '';
+  if (u) u.value = incomeState.unit || 'hourly';
 }
 
-// Setup resize observer for the treemap container
-function setupResizeObserver() {
-  const gridEl = document.getElementById('bento-grid');
-  if (!gridEl) return;
-  
-  const resizeObserver = new ResizeObserver(() => {
-    handleResize();
-  });
-  
-  resizeObserver.observe(gridEl);
-}
-
-document.addEventListener('click', e => {
-  const container = document.getElementById('search-container');
-  if (container && !container.contains(e.target)) {
-    closeSearchDropdown();
-  }
-});
-
-document.addEventListener('keydown', e => {
-  if (modalOpen && e.key === 'Enter') {
-    const activeEl = document.activeElement;
-    const isInForm = activeEl && activeEl.closest('#sub-form');
-    if (!isInForm) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }
-});
-
-// Also handle window resize
+document.addEventListener('click', e => { if (!document.getElementById('search-container')?.contains(e.target)) closeSearchDropdown(); });
+document.addEventListener('keydown', e => { if (modalOpen && e.key === 'Enter' && !document.activeElement?.closest('#sub-form')) { e.preventDefault(); e.stopPropagation(); } });
 window.addEventListener('resize', handleResize);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -634,7 +340,9 @@ document.addEventListener('DOMContentLoaded', () => {
   renderList();
   requestAnimationFrame(() => requestAnimationFrame(renderGrid));
   renderTotals();
-  setupResizeObserver();
+  
+  const gridEl = document.getElementById('bento-grid');
+  if (gridEl) new ResizeObserver(handleResize).observe(gridEl);
   
   const dateInput = document.getElementById('date');
   if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
