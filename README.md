@@ -36,8 +36,7 @@ A sleek, retro-themed web app that helps you understand the true cost of your su
 ## Project Structure
 
 ```
-├── index.html          # Main HTML file
-├── styles.css          # Custom styles & theme
+┌── assets              # Favicon Images
 ├── js/
 │   ├── app.js          # Main application logic
 │   ├── presets.js      # Subscription presets data
@@ -45,7 +44,9 @@ A sleek, retro-themed web app that helps you understand the true cost of your su
 │   ├── treemap.js      # Squarified treemap algorithm
 │   ├── modals.js       # Modal handling
 │   └── sounds.js       # Retro sound effects
-└── README.md
+├── index.html          # Main HTML file
+├── README.md
+└── styles.css          # Custom styles & theme
 ```
 
 ## License
