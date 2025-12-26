@@ -4,7 +4,7 @@
 
 A sleek, retro-themed web app that helps you understand the true cost of your subscriptions by showing them as a proportional treemap visualization and calculating how many hours/days you work to afford them.
 
-**[Live Site](https://ishit-bansal.github.io/SubMap/)**
+**[Live Site](https://sub-map.vercel.app)**
 
 ## Features
 
